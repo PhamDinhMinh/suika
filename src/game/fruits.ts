@@ -1,6 +1,14 @@
 export type FruitKind =
-  | 'cherry' | 'berry' | 'grape' | 'citrus' | 'apple'
-  | 'pear' | 'peach' | 'pine' | 'melon' | 'watermelon';
+  | 'cherry'
+  | 'berry'
+  | 'grape'
+  | 'citrus'
+  | 'apple'
+  | 'pear'
+  | 'peach'
+  | 'pine'
+  | 'melon'
+  | 'watermelon';
 
 export interface Fruit {
   vi: string;
@@ -28,6 +36,8 @@ export const FRUIT_SCALE = 1;
  * 10 tier, bán kính giãn đều theo cấp số nhân (~1.19 lần mỗi bậc). Ảnh nhân
  * vật trong `assets/bubbles/` đánh số 0-9 khớp đúng thứ tự này.
  */
+// Bảng canh cột theo chiều dọc cho dễ so bán kính — Prettier đụng vào là nát.
+// prettier-ignore
 const BASE_FRUITS: Fruit[] = [
   { vi: 'Anh đào',  jp: 'さくらんぼ',   r: 27,  c: '#ec4152', light: '#ff8f96', dark: '#8e1428', glow: '#ff5f74', kind: 'cherry' },
   { vi: 'Dâu tây',  jp: 'いちご',       r: 33,  c: '#f2604f', light: '#ffa48f', dark: '#9c2a2b', glow: '#ff7a63', kind: 'berry' },

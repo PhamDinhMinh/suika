@@ -1,10 +1,21 @@
 import {
-  Bodies, Body, Composite, Engine, Events,
-  type IEventCollision, type Engine as MatterEngine,
+  Bodies,
+  Body,
+  Composite,
+  Engine,
+  Events,
+  type IEventCollision,
+  type Engine as MatterEngine,
 } from 'matter-js';
 import { drawFruit } from './draw';
 import {
-  COOLDOWN, FRUITS, OVERFLOW_LIMIT, POINTS, PORTRAIT_WORLD, randomSpawnTier, WALL,
+  COOLDOWN,
+  FRUITS,
+  OVERFLOW_LIMIT,
+  POINTS,
+  PORTRAIT_WORLD,
+  randomSpawnTier,
+  WALL,
   type WorldSize,
 } from './fruits';
 
@@ -17,7 +28,12 @@ type FruitBody = Body & {
 };
 
 interface Particle {
-  x: number; y: number; vx: number; vy: number; life: number; color: string;
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  life: number;
+  color: string;
 }
 
 export interface SuikaHandlers {
@@ -202,8 +218,9 @@ export class SuikaGame {
   }
 
   private fruits(): FruitBody[] {
-    return Composite.allBodies(this.engine.world)
-      .filter((b): b is FruitBody => (b as FruitBody).tier !== undefined);
+    return Composite.allBodies(this.engine.world).filter(
+      (b): b is FruitBody => (b as FruitBody).tier !== undefined,
+    );
   }
 
   private markDiscovered(tier: number) {
@@ -283,9 +300,16 @@ export class SuikaGame {
     this.drop();
   };
   private onKeyDown = (e: KeyboardEvent) => {
-    if (e.key === 'ArrowLeft') { this.aimX -= 16; e.preventDefault(); }
-    else if (e.key === 'ArrowRight') { this.aimX += 16; e.preventDefault(); }
-    else if (e.key === ' ' || e.key === 'Enter') { this.drop(); e.preventDefault(); }
+    if (e.key === 'ArrowLeft') {
+      this.aimX -= 16;
+      e.preventDefault();
+    } else if (e.key === 'ArrowRight') {
+      this.aimX += 16;
+      e.preventDefault();
+    } else if (e.key === ' ' || e.key === 'Enter') {
+      this.drop();
+      e.preventDefault();
+    }
   };
 
   private bindInput() {
@@ -330,7 +354,10 @@ export class SuikaGame {
     for (const b of this.fruits()) {
       if (now - b.bornAt < 1200) continue;
       if (b.speed > 0.6) continue;
-      if (b.position.y - FRUITS[b.tier].r < this.world.deathY) { over = true; break; }
+      if (b.position.y - FRUITS[b.tier].r < this.world.deathY) {
+        over = true;
+        break;
+      }
     }
     this.overflowFor = over ? this.overflowFor + dt : 0;
     if (this.overflowFor > OVERFLOW_LIMIT) this.gameOver();
@@ -371,9 +398,8 @@ export class SuikaGame {
     ctx.save();
     ctx.setLineDash([9, 9]);
     ctx.lineWidth = 2;
-    ctx.strokeStyle = danger > 0
-      ? `rgba(224,69,60,${0.4 + danger * 0.6})`
-      : 'rgba(142,144,192,0.35)';
+    ctx.strokeStyle =
+      danger > 0 ? `rgba(224,69,60,${0.4 + danger * 0.6})` : 'rgba(142,144,192,0.35)';
     ctx.beginPath();
     ctx.moveTo(WALL, DEATH_Y);
     ctx.lineTo(W - WALL, DEATH_Y);
@@ -432,7 +458,10 @@ export class SuikaGame {
     }
     this.particles = this.particles.filter((p) => p.life > 0);
     for (const p of this.particles) {
-      p.x += p.vx; p.y += p.vy; p.vy += 0.25; p.life -= 0.035;
+      p.x += p.vx;
+      p.y += p.vy;
+      p.vy += 0.25;
+      p.life -= 0.035;
     }
     this.render();
     this.raf = requestAnimationFrame(this.frame);

@@ -6,11 +6,11 @@
  * build, không cần khai báo gì thêm. Tier nào thiếu ảnh thì tự động quay về
  * hoạ tiết vẽ tay trong `draw.ts`.
  */
-const files = import.meta.glob('../assets/bubbles/*.{png,jpg,jpeg,webp}', {
+const files = import.meta.glob<string>('../assets/bubbles/*.{png,jpg,jpeg,webp}', {
   eager: true,
   query: '?url',
   import: 'default',
-}) as Record<string, string>;
+});
 
 const urls = new Map<number, string>();
 for (const [path, url] of Object.entries(files)) {
@@ -33,7 +33,9 @@ export function getArt(tier: number): HTMLImageElement | undefined {
  */
 export function onArtLoaded(cb: () => void): () => void {
   listeners.add(cb);
-  return () => { listeners.delete(cb); };
+  return () => {
+    listeners.delete(cb);
+  };
 }
 
 /**
@@ -48,8 +50,8 @@ export function loadArt(onReady: (tier: number) => void) {
     img.decoding = 'async';
     img.onload = () => {
       images.set(tier, img);
-      onReady(tier);              // huỷ sprite cũ trước…
-      listeners.forEach((cb) => cb());  // …rồi mới báo cho bên vẽ lại
+      onReady(tier); // huỷ sprite cũ trước…
+      listeners.forEach((cb) => cb()); // …rồi mới báo cho bên vẽ lại
     };
     img.src = url;
   }

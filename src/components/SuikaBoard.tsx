@@ -14,6 +14,13 @@ const PREVIEW_R = 44;
  */
 const LANDSCAPE_MQ = '(orientation: landscape) and (max-height: 620px)';
 
+/** Hũ ứng với hướng màn hình ngay tại thời điểm gọi. */
+function currentWorld() {
+  return typeof window !== 'undefined' && window.matchMedia(LANDSCAPE_MQ).matches
+    ? LANDSCAPE_WORLD
+    : PORTRAIT_WORLD;
+}
+
 function useLandscape(): boolean {
   const [landscape, setLandscape] = useState(
     () => typeof window !== 'undefined' && window.matchMedia(LANDSCAPE_MQ).matches,
@@ -49,9 +56,6 @@ export default function SuikaBoard() {
 
   const landscape = useLandscape();
   const world = landscape ? LANDSCAPE_WORLD : PORTRAIT_WORLD;
-  // Game chỉ dựng một lần; ref giữ hũ hiện tại cho lần khởi tạo đó.
-  const worldRef = useRef(world);
-  worldRef.current = world;
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -69,7 +73,9 @@ export default function SuikaBoard() {
           setDiscovered((prev) => (prev.has(tier) ? prev : new Set(prev).add(tier))),
         onGameOver: (finalScore, biggest) => setOver({ score: finalScore, biggest }),
       },
-      worldRef.current,
+      // Game chỉ dựng một lần nên đọc thẳng hướng màn hình lúc này, thay vì
+      // phụ thuộc `world` (sẽ khiến effect dựng lại game mỗi lần xoay máy).
+      currentWorld(),
     );
     gameRef.current = game;
     game.start();

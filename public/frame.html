@@ -30,7 +30,11 @@
         flex-direction: column;
         background: #07081a;
         color: var(--paper);
-        font: 500 13px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif;
+        font:
+          500 13px/1.4 system-ui,
+          -apple-system,
+          'Segoe UI',
+          sans-serif;
       }
 
       /* ---- thanh công cụ ---- */
@@ -78,11 +82,11 @@
         padding: 5px 9px;
       }
 
-      input[type="number"] {
+      input[type='number'] {
         width: 68px;
       }
 
-      input[type="url"] {
+      input[type='url'] {
         width: 190px;
       }
 
@@ -94,7 +98,7 @@
         border-color: var(--lantern);
       }
 
-      button[aria-pressed="true"] {
+      button[aria-pressed='true'] {
         background: var(--lantern);
         border-color: var(--lantern);
         color: #241703;
@@ -139,7 +143,10 @@
         border-radius: 26px;
         overflow: hidden;
         background: #000;
-        box-shadow: 0 30px 80px #000c, 0 0 0 8px #14162f, 0 0 0 9px #333a70;
+        box-shadow:
+          0 30px 80px #000c,
+          0 0 0 8px #14162f,
+          0 0 0 9px #333a70;
       }
 
       .shell.bare {
@@ -372,9 +379,7 @@
         const pad = 32;
         const availW = el.stage.clientWidth - pad;
         const availH = el.stage.clientHeight - pad;
-        const scale = state.fit
-          ? Math.min(1, availW / (outerW + 18), availH / (outerH + 18))
-          : 1;
+        const scale = state.fit ? Math.min(1, availW / (outerW + 18), availH / (outerH + 18)) : 1;
         el.shellBox.style.transform = `scale(${scale})`;
         el.shellBox.style.width = `${outerW * scale}px`;
         el.shellBox.style.height = `${outerH * scale}px`;

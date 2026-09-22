@@ -49,15 +49,22 @@ function paintDetail(c: CanvasRenderingContext2D, f: Fruit, r: number) {
       c.strokeStyle = rgba(f.dark, 0.38);
       c.lineWidth = r * 0.055;
       for (let i = -3; i <= 3; i++) {
-        c.beginPath(); c.moveTo(-r, i * r * 0.36 - r); c.lineTo(r, i * r * 0.36 + r); c.stroke();
-        c.beginPath(); c.moveTo(-r, i * r * 0.36 + r); c.lineTo(r, i * r * 0.36 - r); c.stroke();
+        c.beginPath();
+        c.moveTo(-r, i * r * 0.36 - r);
+        c.lineTo(r, i * r * 0.36 + r);
+        c.stroke();
+        c.beginPath();
+        c.moveTo(-r, i * r * 0.36 + r);
+        c.lineTo(r, i * r * 0.36 - r);
+        c.stroke();
       }
       break;
     }
     case 'berry': {
       c.fillStyle = '#ffe9a8';
       for (let i = 0; i < 9; i++) {
-        const a = i * 2.4, rad = r * (0.25 + (i % 3) * 0.22);
+        const a = i * 2.4,
+          rad = r * (0.25 + (i % 3) * 0.22);
         c.beginPath();
         c.ellipse(Math.cos(a) * rad, Math.sin(a) * rad, r * 0.07, r * 0.05, a, 0, TAU);
         c.fill();
@@ -67,7 +74,8 @@ function paintDetail(c: CanvasRenderingContext2D, f: Fruit, r: number) {
     case 'pear': {
       c.fillStyle = rgba(f.dark, 0.32);
       for (let i = 0; i < 12; i++) {
-        const a = i * 1.9, rad = r * (0.2 + (i % 4) * 0.2);
+        const a = i * 1.9,
+          rad = r * (0.2 + (i % 4) * 0.2);
         c.beginPath();
         c.arc(Math.cos(a) * rad, Math.sin(a) * rad, r * 0.035, 0, TAU);
         c.fill();
@@ -182,8 +190,12 @@ function paintGlass(c: CanvasRenderingContext2D, f: Fruit, R: number, hasArt: bo
   // Khối cầu: sáng ở trên-trái, trong suốt ở dải giữa (để lộ hoạ tiết),
   // tối dần về mép.
   const sphere = c.createRadialGradient(
-    -R * 0.36, -R * 0.44, R * 0.04,
-    -R * 0.10, -R * 0.12, R * 1.32,
+    -R * 0.36,
+    -R * 0.44,
+    R * 0.04,
+    -R * 0.1,
+    -R * 0.12,
+    R * 1.32,
   );
   sphere.addColorStop(0, rgba(f.light, 0.88 * k));
   sphere.addColorStop(0.28, rgba(f.light, 0.2 * k));
@@ -194,10 +206,7 @@ function paintGlass(c: CanvasRenderingContext2D, f: Fruit, R: number, hasArt: bo
   c.fillRect(-R, -R, R * 2, R * 2);
 
   // Ánh hắt từ dưới lên, tránh mặt dưới bị bệt đen.
-  const bounce = c.createRadialGradient(
-    R * 0.22, R * 0.6, R * 0.02,
-    R * 0.22, R * 0.6, R * 0.72,
-  );
+  const bounce = c.createRadialGradient(R * 0.22, R * 0.6, R * 0.02, R * 0.22, R * 0.6, R * 0.72);
   bounce.addColorStop(0, rgba(f.light, 0.38 * k));
   bounce.addColorStop(1, rgba(f.light, 0));
   c.fillStyle = bounce;

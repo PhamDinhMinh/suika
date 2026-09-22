@@ -13,8 +13,7 @@ const GAP = 7;
 const SWAY = 8;
 const PAD = 8;
 
-const ladderRadius = (tier: number) =>
-  R_MIN + (R_MAX - R_MIN) * (tier / (FRUITS.length - 1));
+const ladderRadius = (tier: number) => R_MIN + (R_MAX - R_MIN) * (tier / (FRUITS.length - 1));
 
 const sway = (tier: number) => Math.sin(tier * 1.05) * SWAY;
 

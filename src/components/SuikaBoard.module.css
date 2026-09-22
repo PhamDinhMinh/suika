@@ -13,10 +13,10 @@
   gap: 14px 12px;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   grid-template-areas:
-    "head head"
-    "stats next"
-    "arena arena"
-    "hint hint";
+    'head head'
+    'stats next'
+    'arena arena'
+    'hint hint';
 }
 
 .head {
@@ -78,7 +78,9 @@
   border-radius: 22px;
   overflow: hidden;
   background: linear-gradient(180deg, #131637 0%, #191d47 100%);
-  box-shadow: 0 24px 60px #05061ba8, inset 0 0 0 1px #ffffff12;
+  box-shadow:
+    0 24px 60px #05061ba8,
+    inset 0 0 0 1px #ffffff12;
   touch-action: none;
   cursor: crosshair;
   user-select: none;
@@ -253,11 +255,11 @@
     /* Hàng rỗng cuối hút hết phần dư của cột hũ, để hai thẻ bám sát nhau. */
     grid-template-rows: auto auto auto 1fr auto;
     grid-template-areas:
-      "head head"
-      "arena stats"
-      "arena next"
-      "arena ."
-      "hint hint";
+      'head head'
+      'arena stats'
+      'arena next'
+      'arena .'
+      'hint hint';
   }
 
   .arena {
@@ -294,9 +296,9 @@
     grid-template-columns: minmax(96px, 1fr) auto minmax(116px, 1fr);
     grid-template-rows: auto auto minmax(0, 1fr);
     grid-template-areas:
-      "head   board next"
-      "stats  board next"
-      "ladder board next";
+      'head   board next'
+      'stats  board next'
+      'ladder board next';
   }
 
   /* Lộ trình và hũ trở thành hai ô grid riêng để tách ra hai cột. */

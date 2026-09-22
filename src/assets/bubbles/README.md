@@ -9,11 +9,11 @@ tự động quay về hoạ tiết trái cây vẽ tay trong `draw.ts`.
 
 ## Yêu cầu ảnh
 
-| Mục | Giá trị |
-| --- | --- |
-| Kích thước | vuông, 320×320 trở lên (512 là đẹp) |
-| Bố cục | mặt nhân vật ở giữa, chừa lề ~12% vì ảnh bị cắt tròn |
-| Nền | trong suốt là tốt nhất — màu tier sẽ hiện ra sau lưng |
+| Mục        | Giá trị                                                 |
+| ---------- | ------------------------------------------------------- |
+| Kích thước | vuông, 320×320 trở lên (512 là đẹp)                     |
+| Bố cục     | mặt nhân vật ở giữa, chừa lề ~12% vì ảnh bị cắt tròn    |
+| Nền        | trong suốt là tốt nhất — màu tier sẽ hiện ra sau lưng   |
 | Dung lượng | ≲ 40 KB/file, cả bộ 10 file nên dưới 500 KB cho webview |
 
 ## Bộ đang có
@@ -22,18 +22,18 @@ Chibi vẽ tạm bằng canvas, dùng để xem giao diện — thay hết bằn
 Mỗi nhân vật khác nhau ở **dáng tóc + phụ kiện đội đầu + biểu cảm**, vì ở quả nhỏ
 nhất (đường kính ~28px) chỉ ba thứ đó còn đọc được, màu thì không đủ:
 
-| Tier | Quả | Nhân vật |
-| --- | --- | --- |
-| 0 | Anh đào | tóc đuôi ngựa, nơ kem, cười |
-| 1 | Dâu tây | hai búi odango, nháy mắt |
-| 2 | Nho | mũ phù thuỷ, mắt ngôi sao |
-| 3 | Quýt | mũ rơm, cười hở răng nanh |
-| 4 | Táo | kính bảo hộ trên trán, mắt hí lạnh lùng |
-| 5 | Lê | tóc xoăn, kính tròn |
-| 6 | Đào | tóc dài công chúa, vương miện |
-| 7 | Dứa | chóp tóc, tai nghe, lè lưỡi |
-| 8 | Dưa lưới | mũ trùm đầu, ngái ngủ |
-| 9 | Dưa hấu | khăn bandana đỏ + sẹo, cười ngạo |
+| Tier | Quả      | Nhân vật                                |
+| ---- | -------- | --------------------------------------- |
+| 0    | Anh đào  | tóc đuôi ngựa, nơ kem, cười             |
+| 1    | Dâu tây  | hai búi odango, nháy mắt                |
+| 2    | Nho      | mũ phù thuỷ, mắt ngôi sao               |
+| 3    | Quýt     | mũ rơm, cười hở răng nanh               |
+| 4    | Táo      | kính bảo hộ trên trán, mắt hí lạnh lùng |
+| 5    | Lê       | tóc xoăn, kính tròn                     |
+| 6    | Đào      | tóc dài công chúa, vương miện           |
+| 7    | Dứa      | chóp tóc, tai nghe, lè lưỡi             |
+| 8    | Dưa lưới | mũ trùm đầu, ngái ngủ                   |
+| 9    | Dưa hấu  | khăn bandana đỏ + sẹo, cười ngạo        |
 
 Khi thay art thật, giữ nguyên nguyên tắc này: đừng để 10 ảnh chỉ khác màu.
 

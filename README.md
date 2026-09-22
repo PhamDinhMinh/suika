@@ -13,15 +13,15 @@ npm run preview
 
 ## Cấu trúc
 
-| Đường dẫn | Vai trò |
-| --- | --- |
-| `src/game/fruits.ts` | Bảng 11 loại quả, điểm, hằng số kích thước bàn chơi |
-| `src/game/draw.ts` | Vẽ quả: bóng thuỷ tinh có quầng sáng, cache sprite theo tier |
-| `src/game/art.ts` | Nạp ảnh nhân vật từ `src/assets/bubbles/` |
-| `src/game/engine.ts` | `SuikaGame`: vật lý, input, game loop, game over — **thuần TS, không dính React** |
-| `src/components/SuikaBoard.tsx` | Lớp React bọc ngoài: canvas refs, điểm, quả kế tiếp, bố cục |
-| `src/components/MergeLadder.tsx` | Cột "Lộ trình hợp thành" bên trái bàn chơi |
-| `src/styles/global.css` | Biến màu & nền |
+| Đường dẫn                        | Vai trò                                                                           |
+| -------------------------------- | --------------------------------------------------------------------------------- |
+| `src/game/fruits.ts`             | Bảng 11 loại quả, điểm, hằng số kích thước bàn chơi                               |
+| `src/game/draw.ts`               | Vẽ quả: bóng thuỷ tinh có quầng sáng, cache sprite theo tier                      |
+| `src/game/art.ts`                | Nạp ảnh nhân vật từ `src/assets/bubbles/`                                         |
+| `src/game/engine.ts`             | `SuikaGame`: vật lý, input, game loop, game over — **thuần TS, không dính React** |
+| `src/components/SuikaBoard.tsx`  | Lớp React bọc ngoài: canvas refs, điểm, quả kế tiếp, bố cục                       |
+| `src/components/MergeLadder.tsx` | Cột "Lộ trình hợp thành" bên trái bàn chơi                                        |
+| `src/styles/global.css`          | Biến màu & nền                                                                    |
 
 | `src/assets/bubbles/` | Ảnh nhân vật cho từng tier (xem README trong thư mục) |
 

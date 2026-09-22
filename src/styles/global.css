@@ -8,9 +8,9 @@
   --muted: #8e90c0;
   --vine: #56b978;
   --melon: #e0453c;
-  --jp: "Hiragino Maru Gothic ProN", "Hiragino Sans", "Yu Gothic", "Noto Sans JP", sans-serif;
-  --display: "Baloo 2", var(--jp), system-ui, sans-serif;
-  --body: "Be Vietnam Pro", var(--jp), system-ui, sans-serif;
+  --jp: 'Hiragino Maru Gothic ProN', 'Hiragino Sans', 'Yu Gothic', 'Noto Sans JP', sans-serif;
+  --display: 'Baloo 2', var(--jp), system-ui, sans-serif;
+  --body: 'Be Vietnam Pro', var(--jp), system-ui, sans-serif;
 }
 
 html,
@@ -21,9 +21,7 @@ body,
 
 body {
   margin: 0;
-  background:
-    radial-gradient(1100px 620px at 50% -10%, #23276080 0%, #0d0f2b00 70%),
-    var(--night);
+  background: radial-gradient(1100px 620px at 50% -10%, #23276080 0%, #0d0f2b00 70%), var(--night);
   color: var(--paper);
   font-family: var(--body);
   -webkit-font-smoothing: antialiased;
