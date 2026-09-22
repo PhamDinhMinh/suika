@@ -1,0 +1,50 @@
+.wrap {
+  background: var(--night-2);
+  border: 1px solid var(--edge);
+  border-radius: 14px;
+  padding: 10px 6px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+}
+
+.canvas {
+  display: block;
+  width: var(--lw);
+  height: var(--lh);
+}
+
+/* Điện thoại xoay ngang: lộ trình dựng dọc sát mép trái, cao hết ô grid
+   được chia. Ngưỡng phải khớp với SuikaBoard.module.css. */
+@media (orientation: landscape) and (max-height: 620px) {
+  .wrap {
+    background: none;
+    border: 0;
+    padding: 0;
+    min-height: 0;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .canvas {
+    height: 100%;
+    max-height: 100%;
+    width: auto;
+    aspect-ratio: var(--lar);
+  }
+
+  .label {
+    display: none;
+  }
+}
+
+.label {
+  font-size: 9px;
+  line-height: 1.35;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-align: center;
+  margin: 0;
+}

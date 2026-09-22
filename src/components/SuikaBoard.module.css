@@ -1,0 +1,408 @@
+/* Bố cục dùng grid-area cho 5 khối: head / stats / arena (lộ trình + hũ) /
+   next / hint. Mỗi hướng màn hình chỉ cần vẽ lại grid-template-areas. */
+.wrap {
+  min-height: 100%;
+  box-sizing: border-box;
+  max-width: 520px;
+  margin-inline: auto;
+  padding-inline: 16px;
+  padding-block: max(20px, env(safe-area-inset-top)) max(28px, env(safe-area-inset-bottom));
+  display: grid;
+  align-content: start;
+  justify-items: stretch;
+  gap: 14px 12px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-areas:
+    "head head"
+    "stats next"
+    "arena arena"
+    "hint hint";
+}
+
+.head {
+  grid-area: head;
+  text-align: center;
+}
+
+.kanji {
+  font-family: var(--jp);
+  font-size: 13px;
+  letter-spacing: 0.32em;
+  color: var(--lantern);
+  opacity: 0.85;
+}
+
+.title {
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: clamp(28px, 7vw, 40px);
+  line-height: 1.05;
+  margin: 6px 0 4px;
+  text-wrap: balance;
+}
+
+.title em {
+  font-style: normal;
+  color: var(--lantern);
+}
+
+.tagline {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+/* Lộ trình bám sát mép trái hũ. */
+.arena {
+  grid-area: arena;
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  justify-content: center;
+  width: 100%;
+  min-width: 0;
+}
+
+.ladder {
+  grid-area: ladder;
+}
+
+/* ---- board ---- */
+.board {
+  grid-area: board;
+  position: relative;
+  flex: 1 1 auto;
+  max-width: 440px;
+  min-width: 0;
+  aspect-ratio: var(--ar, 440 / 620);
+  border-radius: 22px;
+  overflow: hidden;
+  background: linear-gradient(180deg, #131637 0%, #191d47 100%);
+  box-shadow: 0 24px 60px #05061ba8, inset 0 0 0 1px #ffffff12;
+  touch-action: none;
+  cursor: crosshair;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.board canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.over {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  gap: 10px;
+  justify-items: center;
+  padding: 24px;
+  text-align: center;
+  background: #0d0f2be6;
+  backdrop-filter: blur(3px);
+}
+
+.over .jp {
+  font-family: var(--jp);
+  color: var(--melon);
+  letter-spacing: 0.3em;
+  font-size: 13px;
+}
+
+.over h2 {
+  font-family: var(--display);
+  font-size: 30px;
+  margin: 0;
+}
+
+.over p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.final {
+  font-family: var(--display);
+  font-size: 46px;
+  font-weight: 800;
+  color: var(--lantern);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.play {
+  margin-top: 8px;
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 16px;
+  color: #241703;
+  background: var(--lantern);
+  border: 0;
+  border-radius: 999px;
+  padding: 11px 26px;
+  cursor: pointer;
+  box-shadow: 0 8px 20px #ffb23f3d;
+}
+
+.play:hover {
+  background: #ffc266;
+}
+
+.play:focus-visible {
+  outline: 3px solid var(--paper);
+  outline-offset: 3px;
+}
+
+/* ---- thẻ thông tin ---- */
+.card {
+  background: var(--night-2);
+  border: 1px solid var(--edge);
+  border-radius: 16px;
+  padding: 14px;
+}
+
+.stats {
+  grid-area: stats;
+}
+
+.nextCard {
+  grid-area: next;
+}
+
+.label {
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0 0 6px;
+}
+
+.score {
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: 40px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.best {
+  color: var(--muted);
+  font-size: 13px;
+  margin-top: 6px;
+  font-variant-numeric: tabular-nums;
+}
+
+.next {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+/* Ở lưới 2 cột trên máy hẹp, cột chữ phải co được thay vì đẩy tràn thẻ. */
+.nextText {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.next canvas {
+  width: 56px;
+  height: 56px;
+}
+
+.nm {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 17px;
+}
+
+.nextJp {
+  font-family: var(--jp);
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.hint {
+  grid-area: hint;
+  color: var(--muted);
+  font-size: 12.5px;
+  text-align: center;
+  line-height: 1.7;
+  margin: 0;
+}
+
+.hint kbd {
+  font-family: var(--body);
+  font-size: 11px;
+  background: var(--panel);
+  border: 1px solid var(--edge);
+  border-bottom-width: 2px;
+  border-radius: 6px;
+  padding: 1px 6px;
+}
+
+/* Rộng (desktop): lộ trình + hũ bên trái, hai thẻ xếp chồng bên phải. */
+@media (min-width: 720px) {
+  .wrap {
+    max-width: none;
+    justify-content: center;
+    grid-template-columns: auto 180px;
+    /* Hàng rỗng cuối hút hết phần dư của cột hũ, để hai thẻ bám sát nhau. */
+    grid-template-rows: auto auto auto 1fr auto;
+    grid-template-areas:
+      "head head"
+      "arena stats"
+      "arena next"
+      "arena ."
+      "hint hint";
+  }
+
+  .arena {
+    width: auto;
+  }
+
+  .board {
+    width: 440px;
+  }
+
+  .stats,
+  .nextCard {
+    align-self: start;
+  }
+}
+
+/* Điện thoại xoay ngang: tràn viền, không cuộn. Hũ cao hết màn hình ở giữa,
+   lộ trình dựng dọc mép trái, điểm số nằm đè lên nền như game arcade.
+   Ngưỡng phải khớp với LANDSCAPE_MQ trong SuikaBoard.tsx. */
+@media (orientation: landscape) and (max-height: 620px) {
+  .wrap {
+    --pad-y: 8px;
+
+    max-width: none;
+    height: 100vh;
+    height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
+    padding-block: var(--pad-y);
+    padding-inline: max(10px, env(safe-area-inset-left)) max(10px, env(safe-area-inset-right));
+    gap: 2px 14px;
+    align-content: stretch;
+    align-items: start;
+    grid-template-columns: minmax(96px, 1fr) auto minmax(116px, 1fr);
+    grid-template-rows: auto auto minmax(0, 1fr);
+    grid-template-areas:
+      "head   board next"
+      "stats  board next"
+      "ladder board next";
+  }
+
+  /* Lộ trình và hũ trở thành hai ô grid riêng để tách ra hai cột. */
+  .arena {
+    display: contents;
+  }
+
+  .kanji,
+  .tagline,
+  .hint {
+    display: none;
+  }
+
+  /* Cột trái căn giữa cho thẳng trục với lộ trình bên dưới. */
+  .head,
+  .stats {
+    text-align: center;
+  }
+
+  .title {
+    font-size: 19px;
+    margin: 0;
+  }
+
+  /* Hũ quyết định chiều cao cả lưới: cao hết màn, rộng suy ra từ tỉ lệ. */
+  .board {
+    height: calc(100vh - var(--pad-y) * 2);
+    height: calc(100dvh - var(--pad-y) * 2);
+    width: auto;
+    max-width: none;
+    flex: none;
+    align-self: stretch;
+    justify-self: center;
+    border-radius: 16px;
+  }
+
+  .ladder {
+    align-self: stretch;
+    min-height: 0;
+  }
+
+  /* Điểm số bỏ khung thẻ, đọc như overlay. */
+  .stats {
+    background: none;
+    border: 0;
+    padding: 6px 0 0;
+  }
+
+  .label {
+    font-size: 10px;
+    margin-bottom: 2px;
+  }
+
+  .score {
+    font-size: 30px;
+  }
+
+  .best {
+    font-size: 11px;
+    margin-top: 2px;
+  }
+
+  .nextCard {
+    align-self: start;
+    padding: 10px;
+  }
+
+  .next {
+    flex-direction: column;
+    gap: 4px;
+    text-align: center;
+  }
+
+  .next canvas {
+    width: 46px;
+    height: 46px;
+  }
+
+  .nm {
+    font-size: 14px;
+  }
+
+  .nextJp {
+    font-size: 10px;
+  }
+
+  .over {
+    gap: 6px;
+    padding: 14px;
+  }
+
+  .over h2 {
+    font-size: 20px;
+  }
+
+  .over p {
+    font-size: 12px;
+  }
+
+  .final {
+    font-size: 32px;
+  }
+
+  .play {
+    margin-top: 4px;
+    font-size: 14px;
+    padding: 8px 20px;
+  }
+}

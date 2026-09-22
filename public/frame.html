@@ -1,0 +1,470 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Suika Yatai — Khung thử thiết bị</title>
+    <style>
+      :root {
+        --night: #0d0f2b;
+        --night-2: #171a3f;
+        --edge: #2e3470;
+        --lantern: #ffb23f;
+        --paper: #f4eee2;
+        --muted: #8e90c0;
+        color-scheme: dark;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+      }
+
+      body {
+        display: flex;
+        flex-direction: column;
+        background: #07081a;
+        color: var(--paper);
+        font: 500 13px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif;
+      }
+
+      /* ---- thanh công cụ ---- */
+      .bar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px 14px;
+        padding: 10px 14px;
+        background: var(--night);
+        border-bottom: 1px solid var(--edge);
+      }
+
+      .bar strong {
+        font-size: 14px;
+        letter-spacing: 0.02em;
+      }
+
+      .bar strong em {
+        font-style: normal;
+        color: var(--lantern);
+      }
+
+      .grp {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .grp > span {
+        font-size: 11px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      select,
+      input,
+      button {
+        font: inherit;
+        color: var(--paper);
+        background: var(--night-2);
+        border: 1px solid var(--edge);
+        border-radius: 8px;
+        padding: 5px 9px;
+      }
+
+      input[type="number"] {
+        width: 68px;
+      }
+
+      input[type="url"] {
+        width: 190px;
+      }
+
+      button {
+        cursor: pointer;
+      }
+
+      button:hover {
+        border-color: var(--lantern);
+      }
+
+      button[aria-pressed="true"] {
+        background: var(--lantern);
+        border-color: var(--lantern);
+        color: #241703;
+      }
+
+      label.chk {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        color: var(--muted);
+        cursor: pointer;
+      }
+
+      .size {
+        margin-left: auto;
+        color: var(--muted);
+        font-variant-numeric: tabular-nums;
+      }
+
+      /* ---- sân khấu ---- */
+      .stage {
+        flex: 1;
+        min-height: 0;
+        display: grid;
+        place-items: center;
+        padding: 16px;
+        overflow: auto;
+        background:
+          radial-gradient(900px 500px at 50% 0%, #1b1f4d66, #07081a00 70%),
+          repeating-conic-gradient(#0c0d22 0% 25%, #0a0b1c 0% 50%) 0 0 / 22px 22px;
+      }
+
+      /* Khung được thu nhỏ bằng transform để giữ nguyên CSS pixel bên trong:
+         media query trong app vẫn đọc đúng kích thước thật của iframe. */
+      .shellBox {
+        transform-origin: center center;
+      }
+
+      .shell {
+        display: flex;
+        flex-direction: column;
+        border-radius: 26px;
+        overflow: hidden;
+        background: #000;
+        box-shadow: 0 30px 80px #000c, 0 0 0 8px #14162f, 0 0 0 9px #333a70;
+      }
+
+      .shell.bare {
+        border-radius: 4px;
+        box-shadow: 0 20px 50px #000a;
+      }
+
+      /* Giả lập status bar + header native của Zalo Mini App */
+      .status {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 16px;
+        font-size: 11px;
+        color: #fff;
+        background: #0068ff;
+        flex: none;
+      }
+
+      .navbar {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 0 12px;
+        font-size: 14px;
+        font-weight: 600;
+        color: #fff;
+        background: #0068ff;
+        flex: none;
+      }
+
+      .navbar .spacer {
+        flex: 1;
+      }
+
+      .navbar .dots {
+        opacity: 0.8;
+        letter-spacing: 2px;
+      }
+
+      iframe {
+        flex: 1;
+        width: 100%;
+        border: 0;
+        background: var(--night);
+        display: block;
+      }
+
+      .homebar {
+        flex: none;
+        display: grid;
+        place-items: center;
+        background: var(--night);
+      }
+
+      .homebar i {
+        display: block;
+        width: 34%;
+        height: 5px;
+        border-radius: 99px;
+        background: #ffffff59;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="bar">
+      <strong>Suika <em>Yatai</em> · khung thử</strong>
+
+      <div class="grp">
+        <span>Thiết bị</span>
+        <select id="device"></select>
+      </div>
+
+      <div class="grp">
+        <span>Hướng</span>
+        <button id="portrait" aria-pressed="true">Dọc</button>
+        <button id="landscape" aria-pressed="false">Ngang</button>
+      </div>
+
+      <div class="grp">
+        <span>Cỡ</span>
+        <input id="w" type="number" min="200" max="3000" step="1" />
+        <span>×</span>
+        <input id="h" type="number" min="200" max="3000" step="1" />
+      </div>
+
+      <div class="grp">
+        <label class="chk"><input id="zalo" type="checkbox" checked /> Thanh Zalo</label>
+        <label class="chk"><input id="fit" type="checkbox" checked /> Thu vừa màn</label>
+      </div>
+
+      <div class="grp">
+        <span>URL</span>
+        <input id="url" type="url" value="./" />
+        <button id="reload" title="Tải lại khung">↻</button>
+      </div>
+
+      <div class="size" id="readout"></div>
+    </div>
+
+    <div class="stage" id="stage">
+      <div class="shellBox" id="shellBox">
+        <div class="shell" id="shell">
+          <div class="status" id="status">
+            <span>9:41</span>
+            <span>▮▮▮ ⌁</span>
+          </div>
+          <div class="navbar" id="navbar">
+            <span>‹</span>
+            <span>Suika Yatai</span>
+            <span class="spacer"></span>
+            <span class="dots">•••</span>
+            <span>⊗</span>
+          </div>
+          <iframe id="frame" title="Suika Yatai" src="./"></iframe>
+          <div class="homebar" id="homebar"><i></i></div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Kích thước CSS pixel của vùng webview (đã trừ status bar / home indicator
+      // do hệ điều hành chiếm), cùng chiều cao thanh native của Zalo Mini App.
+      const DEVICES = [
+        { id: 'iphone-se', name: 'iPhone SE / 8', w: 375, h: 667, status: 20, home: 0 },
+        { id: 'iphone-13', name: 'iPhone 13 / 14', w: 390, h: 844, status: 47, home: 34 },
+        { id: 'iphone-15-pro', name: 'iPhone 15 Pro', w: 393, h: 852, status: 59, home: 34 },
+        { id: 'iphone-15-pm', name: 'iPhone 15 Pro Max', w: 430, h: 932, status: 59, home: 34 },
+        { id: 'galaxy-s20', name: 'Galaxy S20', w: 360, h: 800, status: 24, home: 24 },
+        { id: 'galaxy-a51', name: 'Galaxy A51 / M31', w: 412, h: 914, status: 24, home: 24 },
+        { id: 'pixel-7', name: 'Pixel 7', w: 412, h: 915, status: 24, home: 24 },
+        { id: 'redmi-note', name: 'Redmi Note (360×780)', w: 360, h: 780, status: 24, home: 24 },
+        { id: 'ipad-mini', name: 'iPad mini', w: 768, h: 1024, status: 24, home: 20 },
+        { id: 'custom', name: 'Tuỳ chỉnh', w: 390, h: 844, status: 24, home: 20 },
+      ];
+
+      const NAVBAR = 48; // thanh tiêu đề native của Zalo Mini App
+
+      const $ = (id) => document.getElementById(id);
+      const el = {
+        device: $('device'),
+        portrait: $('portrait'),
+        landscape: $('landscape'),
+        w: $('w'),
+        h: $('h'),
+        zalo: $('zalo'),
+        fit: $('fit'),
+        url: $('url'),
+        reload: $('reload'),
+        readout: $('readout'),
+        stage: $('stage'),
+        shellBox: $('shellBox'),
+        shell: $('shell'),
+        status: $('status'),
+        navbar: $('navbar'),
+        homebar: $('homebar'),
+        frame: $('frame'),
+      };
+
+      const state = {
+        device: 'iphone-13',
+        landscape: false,
+        w: 390,
+        h: 844,
+        zalo: true,
+        fit: true,
+        url: './',
+      };
+
+      for (const d of DEVICES) {
+        const opt = document.createElement('option');
+        opt.value = d.id;
+        opt.textContent = `${d.name} — ${d.w}×${d.h}`;
+        el.device.append(opt);
+      }
+
+      const currentDevice = () => DEVICES.find((d) => d.id === state.device) ?? DEVICES[1];
+
+      // Đọc trạng thái từ hash để chia sẻ / mở lại đúng cấu hình đang thử.
+      function readHash() {
+        const p = new URLSearchParams(location.hash.slice(1));
+        if (p.has('d') && DEVICES.some((d) => d.id === p.get('d'))) state.device = p.get('d');
+        const dev = currentDevice();
+        state.w = Number(p.get('w')) || dev.w;
+        state.h = Number(p.get('h')) || dev.h;
+        state.landscape = p.get('o') === 'l';
+        if (p.has('zalo')) state.zalo = p.get('zalo') === '1';
+        if (p.has('fit')) state.fit = p.get('fit') === '1';
+        if (p.has('u')) state.url = p.get('u');
+      }
+
+      function writeHash() {
+        const p = new URLSearchParams({
+          d: state.device,
+          o: state.landscape ? 'l' : 'p',
+          w: String(state.w),
+          h: String(state.h),
+          zalo: state.zalo ? '1' : '0',
+          fit: state.fit ? '1' : '0',
+          u: state.url,
+        });
+        history.replaceState(null, '', `#${p}`);
+      }
+
+      function render() {
+        const dev = currentDevice();
+        // Kích thước gốc luôn hiểu theo chiều dọc; xoay ngang thì hoán đổi.
+        const outerW = state.landscape ? state.h : state.w;
+        const outerH = state.landscape ? state.w : state.h;
+
+        const statusH = state.zalo ? (state.landscape ? 0 : dev.status) : 0;
+        const navH = state.zalo ? NAVBAR : 0;
+        const homeH = state.zalo && dev.home ? (state.landscape ? 14 : dev.home) : 0;
+
+        el.status.style.display = statusH ? '' : 'none';
+        el.status.style.height = `${statusH}px`;
+        el.navbar.style.display = navH ? '' : 'none';
+        el.navbar.style.height = `${navH}px`;
+        el.homebar.style.display = homeH ? '' : 'none';
+        el.homebar.style.height = `${homeH}px`;
+        el.shell.classList.toggle('bare', !state.zalo);
+
+        el.shell.style.width = `${outerW}px`;
+        el.shell.style.height = `${outerH}px`;
+
+        const viewW = outerW;
+        const viewH = outerH - statusH - navH - homeH;
+
+        // Thu nhỏ bằng transform: iframe vẫn giữ đúng số CSS pixel bên trong.
+        const pad = 32;
+        const availW = el.stage.clientWidth - pad;
+        const availH = el.stage.clientHeight - pad;
+        const scale = state.fit
+          ? Math.min(1, availW / (outerW + 18), availH / (outerH + 18))
+          : 1;
+        el.shellBox.style.transform = `scale(${scale})`;
+        el.shellBox.style.width = `${outerW * scale}px`;
+        el.shellBox.style.height = `${outerH * scale}px`;
+
+        el.readout.textContent =
+          `webview ${viewW}×${viewH} · ${viewW >= viewH ? 'ngang' : 'dọc'}` +
+          ` · tỉ lệ ${Math.round(scale * 100)}%`;
+
+        el.device.value = state.device;
+        el.w.value = String(state.w);
+        el.h.value = String(state.h);
+        el.portrait.setAttribute('aria-pressed', String(!state.landscape));
+        el.landscape.setAttribute('aria-pressed', String(state.landscape));
+        el.zalo.checked = state.zalo;
+        el.fit.checked = state.fit;
+        if (el.url.value !== state.url) el.url.value = state.url;
+        if (el.frame.getAttribute('src') !== state.url) el.frame.setAttribute('src', state.url);
+
+        writeHash();
+      }
+
+      el.device.addEventListener('change', () => {
+        state.device = el.device.value;
+        const dev = currentDevice();
+        if (state.device !== 'custom') {
+          state.w = dev.w;
+          state.h = dev.h;
+        }
+        render();
+      });
+
+      el.portrait.addEventListener('click', () => {
+        state.landscape = false;
+        render();
+      });
+
+      el.landscape.addEventListener('click', () => {
+        state.landscape = true;
+        render();
+      });
+
+      for (const key of ['w', 'h']) {
+        el[key].addEventListener('input', () => {
+          const v = Number(el[key].value);
+          if (v >= 200 && v <= 3000) {
+            state[key] = v;
+            state.device = 'custom';
+            render();
+          }
+        });
+      }
+
+      el.zalo.addEventListener('change', () => {
+        state.zalo = el.zalo.checked;
+        render();
+      });
+
+      el.fit.addEventListener('change', () => {
+        state.fit = el.fit.checked;
+        render();
+      });
+
+      el.url.addEventListener('change', () => {
+        state.url = el.url.value.trim() || './';
+        render();
+      });
+
+      el.reload.addEventListener('click', () => {
+        // Gán lại src để ép webview tải lại từ đầu (reset cả ván chơi).
+        const src = el.frame.getAttribute('src');
+        el.frame.setAttribute('src', 'about:blank');
+        requestAnimationFrame(() => el.frame.setAttribute('src', src));
+      });
+
+      // R = xoay nhanh, tiện khi đang soi một breakpoint.
+      addEventListener('keydown', (e) => {
+        if (e.key.toLowerCase() === 'r' && !/^(INPUT|SELECT)$/.test(e.target.tagName)) {
+          state.landscape = !state.landscape;
+          render();
+        }
+      });
+
+      addEventListener('resize', render);
+      addEventListener('hashchange', () => {
+        readHash();
+        render();
+      });
+
+      readHash();
+      render();
+    </script>
+  </body>
+</html>
