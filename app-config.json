@@ -1,0 +1,16 @@
+{
+  "app": {
+    "title": "Suika",
+    "headerTitle": "Suika",
+    "headerColor": "#1843EF",
+    "textColor": "white",
+    "leftButton": "back",
+    "statusBar": "normal",
+    "actionBarHidden": false,
+    "hideAndroidBottomNavigationBar": false,
+    "hideIOSSafeAreaBottom": false
+  },
+  "listCSS": ["assets/index-Cw_79izb.css"],
+  "listSyncJS": [],
+  "listAsyncJS": ["assets/index-LnUWMQ7s.js"]
+}
