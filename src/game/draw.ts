@@ -281,6 +281,21 @@ interface Sprite {
 
 const cache: Array<Sprite | undefined> = [];
 
+/** Trần bán kính sprite. Trong game 120 là đủ (bóng to nhất ~240px) và giữ cho
+ *  sprite của dưa hấu không phình bộ nhớ trên webview. */
+let maxSpriteRadius = 120;
+
+/**
+ * Nới trần độ phân giải sprite — chỉ dùng cho trang dựng logo, nơi cần bóng
+ * vài trăm px. Game không gọi hàm này. Trần thật sự vẫn là kích thước ảnh
+ * nhân vật trong `assets/bubbles/` (320px).
+ */
+export function setSpriteResolution(maxRadius: number) {
+  if (maxRadius === maxSpriteRadius) return;
+  maxSpriteRadius = maxRadius;
+  cache.length = 0;
+}
+
 function makeLayer(size: number): [HTMLCanvasElement, CanvasRenderingContext2D] {
   const el = document.createElement('canvas');
   el.width = size;
@@ -296,7 +311,7 @@ function buildSprite(tier: number): Sprite {
   const art = getArt(tier);
   // Vẽ dư độ phân giải để quả nhỏ vẫn nét khi phóng to ở ô "quả kế tiếp",
   // nhưng chặn trần để sprite của dưa hấu không phình bộ nhớ.
-  const R = Math.min(120, Math.max(48, f.r * 2));
+  const R = Math.min(maxSpriteRadius, Math.max(48, f.r * 2));
   const size = Math.ceil(R * HALO * 2);
 
   const [body, bc] = makeLayer(size);

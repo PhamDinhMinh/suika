@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Suika Yatai — dựng logo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@800&family=Be+Vietnam+Pro:wght@500&display=block"
+    />
+    <style>
+      html,
+      body {
+        margin: 0;
+        background: #090b1e;
+      }
+      body {
+        display: flex;
+        align-items: center;
+        width: max-content;
+      }
+      canvas {
+        display: block;
+      }
+      /* mode=wordmark: canvas nền trong suốt nằm trên dải 1024x320 của body,
+         để hai lớp nền không lộ mối nối. */
+      body.wordmark {
+        width: 1638px;
+        height: 512px;
+        background:
+          radial-gradient(420px 260px at 18% 26%, #ffb23f3d, #ffb23f00 70%),
+          linear-gradient(135deg, #1b1f4d, #090b1e);
+      }
+      .text {
+        display: none;
+        font-family: 'Baloo 2', system-ui, sans-serif;
+        margin-left: 6px;
+      }
+      body.wordmark .text {
+        display: block;
+      }
+      .jp {
+        font-family: 'Hiragino Maru Gothic ProN', 'Noto Sans JP', sans-serif;
+        font-size: 38px;
+        letter-spacing: 0.34em;
+        color: #ffb23f;
+        opacity: 0.9;
+      }
+      .name {
+        font-size: 131px;
+        font-weight: 800;
+        color: #f4eee2;
+        line-height: 1.1;
+        margin: 10px 0 6px;
+      }
+      .name em {
+        font-style: normal;
+        color: #ffb23f;
+      }
+      .tag {
+        font-family: 'Be Vietnam Pro', system-ui, sans-serif;
+        font-size: 35px;
+        color: #8e90c0;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas width="512" height="512"></canvas>
+    <div class="text">
+      <div class="jp">スイカゲーム</div>
+      <div class="name">Suika <em>Yatai</em></div>
+      <div class="tag">Thả trái cây · gộp thành dưa hấu</div>
+    </div>
+    <script type="module">
+      if (new URLSearchParams(location.search).get('mode') === 'wordmark') {
+        document.body.classList.add('wordmark');
+      }
+    </script>
+    <script type="module" src="/src/logo/render.ts"></script>
+  </body>
+</html>
