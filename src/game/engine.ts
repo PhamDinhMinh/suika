@@ -64,8 +64,16 @@ const BEST_KEY = 'suika-best';
  * không đổi — va chạm vẫn chính xác y hệt, không lo quả xuyên qua nhau.
  * -------------------------------------------------------------------------- */
 const STEP_MS = 1000 / 60;
-/** 1 giây thật = bao nhiêu giây mô phỏng. 1 = chậm rãi, 2 = rất gấp. */
-const GAME_SPEED = 2;
+/**
+ * 1 giây thật = bao nhiêu giây mô phỏng. Đây là núm duy nhất để chỉnh nhịp
+ * game; 1 = nguyên bản, 2 = nhanh gấp đôi.
+ *
+ * Để ở 1 là cố ý: bản gốc không có hằng số này, nó chạy đúng 1 bước mỗi khung
+ * hình, nên nhịp game đi theo tần số quét màn hình — máy 120Hz chơi nhanh gấp
+ * đôi máy 60Hz (rơi hết hũ 0.525s so với 1.050s). Để 1 thì mọi máy đều bằng
+ * đúng cái nhịp mà màn 60Hz vẫn cho (đo được 1.083s, lệch 3%).
+ */
+const GAME_SPEED = 1;
 /** Số ms thật mà một bước vật lý tiêu thụ. */
 const STEP_REAL_MS = STEP_MS / GAME_SPEED;
 /** Trần số bước dồn lại sau một lần khựng, để không "tua nhanh" cả đống. */
@@ -82,8 +90,15 @@ const MAX_STEPS = 6;
  * 2. Matter.js không mô phỏng ma sát lăn: hình tròn chạm đáy là giữ nguyên
  *    vận tốc góc rồi lăn ngang mãi (~22px). Cần tự hãm lấy.
  * -------------------------------------------------------------------------- */
-/** Trần tốc độ rơi, px mỗi bước. Cao hơn là bắt đầu lún sâu vào mặt đỡ. */
-const MAX_FALL = 10;
+/**
+ * Trần tốc độ rơi, px mỗi bước. Có một vách đứng rất gắt: đo được 12 -> trôi
+ * 4.3px, 14 -> 10.9px, 16 -> 168px (coi như không cắt). Đừng nâng quá 12;
+ * muốn quả rơi nhanh hơn thì vặn GAME_SPEED.
+ *
+ * Ở GAME_SPEED = 1 thì trần này chỉ chạm tới đoạn cuối của cú rơi dài nhất,
+ * nên gần như không ảnh hưởng cảm giác — nó chỉ ở đó để chặn cú chạm lún sâu.
+ */
+const MAX_FALL = 12;
 /** Đi xuống nhanh hơn ngần này là đang rơi hoặc đang lăn khỏi đống — kệ nó. */
 const REST_DY = 0.4;
 /** Hệ số ma sát lăn mỗi bước, chỉ áp cho quả đã nằm trên mặt đỡ. */
