@@ -11,12 +11,14 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "deploy": "vite build && zmp deploy --outputDir www"
   },
   "dependencies": {
     "matter-js": "^0.20.0",
     "react": "^19.1.1",
-    "react-dom": "^19.1.1"
+    "react-dom": "^19.1.1",
+    "zmp-vite-plugin": "^1.1.6"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
@@ -33,6 +35,6 @@
     "prettier": "^3.9.8",
     "typescript": "^5.7.3",
     "typescript-eslint": "^8.70.1",
-    "vite": "^6.3.5"
+    "vite": "5"
   }
 }

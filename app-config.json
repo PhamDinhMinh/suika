@@ -10,7 +10,7 @@
     "hideAndroidBottomNavigationBar": false,
     "hideIOSSafeAreaBottom": false
   },
-  "listCSS": ["assets/index-Cw_79izb.css"],
+  "listCSS": [],
   "listSyncJS": [],
-  "listAsyncJS": ["assets/index-LnUWMQ7s.js"]
+  "listAsyncJS": []
 }

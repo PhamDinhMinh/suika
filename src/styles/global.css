@@ -1,3 +1,8 @@
+/* Font phải khai báo ở đây chứ không phải trong index.html: Zalo Mini App
+   không upload index.html nên mọi <link> trong đó bị mất khi chạy trên app
+   thật. @import trong CSS thì đi theo bundle nên vẫn còn. */
+@import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Be+Vietnam+Pro:wght@400;500;600&display=swap');
+
 :root {
   --night: #0d0f2b;
   --night-2: #171a3f;
