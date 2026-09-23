@@ -27,6 +27,43 @@ npm run preview
 
 Điểm cao nhất lưu ở `localStorage` key `suika-best`.
 
+## Bảng xếp hạng
+
+Mỗi thiết bị là một người chơi. ID lấy từ `getDeviceIdAsync()` của `zmp-sdk`
+khi chạy trong Zalo; chạy trên web thường thì tự sinh UUID, lưu ở `localStorage`
+key `suika-device-id`.
+
+Lần đầu vào game, người chơi phải nhập tên (tối đa 20 ký tự) mới chơi được. Tên
+lưu ở `localStorage` key `suika-name`, gửi kèm mỗi lần nộp điểm; đổi tên bằng nút
+"Đổi tên" trong bảng xếp hạng.
+
+- `api/leaderboard.ts` — Vercel Function. Cả bảng là một sorted set Redis
+  (`suika:leaderboard`); `ZADD GT` nên điểm chỉ được ghi đè khi cao hơn điểm cũ.
+  Tên nằm ở hash `suika:names` (ID → tên).
+  - `GET /api/leaderboard?deviceId=…&limit=20` — top N + hạng của thiết bị đó
+  - `POST /api/leaderboard` body `{ deviceId, score?, name? }` — nộp điểm và/hoặc
+    đổi tên (chỉ gửi `name` thì không thêm người chơi vào bảng)
+- `src/game/leaderboard.ts` — client: lấy ID thiết bị, gọi API.
+- `src/components/LeaderboardPanel.tsx` — hộp thoại hiển thị bảng.
+- `src/components/NameDialog.tsx` — hộp nhập / đổi tên.
+
+Điểm được nộp mỗi khi hết ván; lần mở app đầu tiên cũng đẩy điểm cao đang có
+trong `localStorage` lên. Cạnh tên có mã hash rút gọn (`#A1B2C3`) để phân biệt
+người trùng tên, không lộ ID thiết bị thật.
+
+Cấu hình:
+
+1. Vercel → Storage → nối **Upstash Redis** vào project. Vercel tự thêm
+   `KV_REST_API_URL` và `KV_REST_API_TOKEN`.
+2. Bản Zalo Mini App chạy trên domain của Zalo nên phải trỏ API tuyệt đối: tạo
+   `.env` với `VITE_API_BASE=https://<project>.vercel.app` trước khi `npm run deploy`.
+   Bản web trên Vercel để trống là được (cùng domain).
+3. Thêm domain Vercel vào danh sách domain được phép gọi trong trang quản lý
+   Zalo Mini App.
+
+Server chỉ kiểm tra điểm là số nguyên hợp lệ — chưa có chống gian lận, ai gọi
+thẳng API cũng ghi được điểm.
+
 ## Bố cục và hướng màn hình
 
 Hai bố cục, tự đổi theo kích thước cửa sổ:

@@ -33,4 +33,9 @@ export default tseslint.config(
     extends: [tseslint.configs.disableTypeChecked],
     languageOptions: { globals: globals.node },
   },
+  // Vercel Functions chạy trên Node, không phải trình duyệt.
+  {
+    files: ['api/**/*.ts'],
+    languageOptions: { globals: globals.node },
+  },
 );

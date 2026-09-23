@@ -1,7 +1,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import react from '@vitejs/plugin-react';
-import { defineConfig, type Plugin } from 'vite';
+import { defineConfig, loadEnv, type Plugin } from 'vite';
 
 /**
  * Ghi app-config.json vào dist với đúng tên file mà lần build này sinh ra.
@@ -40,6 +40,75 @@ function zaloAppConfig(): Plugin {
   };
 }
 
+type Handler = (req: Request) => Response | Promise<Response>;
+
+/**
+ * Chạy các Vercel Function trong `api/` ngay trên dev server của Vite. Không có
+ * plugin này thì Vite trả luôn mã nguồn `api/leaderboard.ts` cho `/api/leaderboard`
+ * và client đọc JSON thất bại.
+ *
+ * Có KV_REST_API_URL/TOKEN (hoặc UPSTASH_…) trong `.env.local` thì dùng Redis
+ * thật; không có thì dùng Redis giả trong bộ nhớ (`api/_memory.ts`).
+ */
+function devApi(): Plugin {
+  return {
+    name: 'dev-api',
+    apply: 'serve',
+    async configureServer(server) {
+      // Vite chỉ nạp biến VITE_* vào client; biến của server phải tự nạp.
+      const env = loadEnv(server.config.mode, server.config.root, '');
+      for (const k of Object.keys(env)) {
+        if (/^(KV|UPSTASH)_/.test(k)) process.env[k] ??= env[k];
+      }
+      const hasRedis =
+        (process.env.KV_REST_API_URL ?? process.env.UPSTASH_REDIS_REST_URL) &&
+        (process.env.KV_REST_API_TOKEN ?? process.env.UPSTASH_REDIS_REST_TOKEN);
+      if (!hasRedis) {
+        const mem = (await server.ssrLoadModule('/api/_memory.ts')) as {
+          memoryPipeline: unknown;
+        };
+        (globalThis as Record<string, unknown>).__suikaMemoryRedis = mem.memoryPipeline;
+        server.config.logger.info('  ➜  API: chưa có Upstash, dùng Redis giả trong bộ nhớ');
+      }
+
+      server.middlewares.use(async (req, res, next) => {
+        const url = new URL(req.url ?? '/', 'http://localhost');
+        const match = /^\/api\/([\w-]+)\/?$/.exec(url.pathname);
+        if (!match) return next();
+
+        try {
+          const mod = (await server.ssrLoadModule(`/api/${match[1]}.ts`)) as Record<
+            string,
+            Handler | undefined
+          >;
+          const handler = mod[req.method ?? 'GET'];
+          if (!handler) {
+            res.statusCode = 405;
+            return res.end();
+          }
+
+          const chunks: Buffer[] = [];
+          for await (const c of req) chunks.push(c as Buffer);
+          const body = chunks.length ? Buffer.concat(chunks) : undefined;
+          const out = await handler(
+            new Request(url, {
+              method: req.method,
+              headers: req.headers as Record<string, string>,
+              body: req.method === 'GET' || req.method === 'HEAD' ? undefined : body,
+            }),
+          );
+
+          res.statusCode = out.status;
+          out.headers.forEach((v, k) => res.setHeader(k, v));
+          res.end(Buffer.from(await out.arrayBuffer()));
+        } catch (e) {
+          next(e);
+        }
+      });
+    },
+  };
+}
+
 /**
  * Bỏ type="module" và crossorigin khỏi index.html. Webview cũ và container nạp
  * file theo đường dẫn nội bộ đều có thể chặn module script vì kiểm tra CORS,
@@ -59,7 +128,7 @@ function classicScriptTags(): Plugin {
 }
 
 export default defineConfig({
-  plugins: [react(), zaloAppConfig(), classicScriptTags()],
+  plugins: [react(), devApi(), zaloAppConfig(), classicScriptTags()],
   // Đường dẫn tương đối để bundle chạy được cả khi host trong thư mục con
   // hoặc trong webview của Zalo Mini App.
   base: './',

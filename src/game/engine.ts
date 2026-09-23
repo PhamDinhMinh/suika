@@ -400,6 +400,8 @@ export class SuikaGame {
     this.drop();
   };
   private onKeyDown = (e: KeyboardEvent) => {
+    // Space/Enter trên nút hay trong hộp thoại là để bấm nút đó, không phải thả quả.
+    if (e.target instanceof Element && e.target.closest('button, input, [role="dialog"]')) return;
     audio.unlock();
     if (e.key === 'ArrowLeft') {
       this.aimX -= 16;

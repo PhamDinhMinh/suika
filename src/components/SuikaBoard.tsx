@@ -3,7 +3,10 @@ import { audio } from '../game/audio';
 import { SuikaGame } from '../game/engine';
 import { drawFruit } from '../game/draw';
 import { FRUITS, LANDSCAPE_WORLD, PORTRAIT_WORLD, type WorldSize } from '../game/fruits';
+import { loadName, savePlayerName, submitScore, type Leaderboard } from '../game/leaderboard';
+import LeaderboardPanel from './LeaderboardPanel';
 import MergeLadder from './MergeLadder';
+import NameDialog from './NameDialog';
 import styles from './SuikaBoard.module.css';
 
 /** Bán kính quả trong ô preview; 128 / 2 / HALO(1.42) ~ 45 là trần để quầng sáng không bị cắt. */
@@ -89,6 +92,15 @@ export default function SuikaBoard() {
   const [discovered, setDiscovered] = useState<Set<number>>(() => new Set());
   const [over, setOver] = useState<GameOverInfo | null>(null);
   const [muted, setMuted] = useState(() => audio.isMuted());
+  const [ranking, setRanking] = useState<Leaderboard | null>(null);
+  const [showRanking, setShowRanking] = useState(false);
+  const [playerName, setPlayerName] = useState(loadName);
+  /** 'required' = lần đầu vào game, chưa có tên thì không cho chơi. */
+  const [nameDialog, setNameDialog] = useState<'required' | 'edit' | null>(() =>
+    loadName() ? null : 'required',
+  );
+  /** Đổi tên xong thì dựng lại bảng xếp hạng để nó tải bản mới. */
+  const [rankingKey, setRankingKey] = useState(0);
 
   const landscape = useMedia(LANDSCAPE_MQ);
   const phone = useMedia(PHONE_MQ);
@@ -99,15 +111,24 @@ export default function SuikaBoard() {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
+    // Điểm cao đọc từ localStorage lúc start (onBest bắn đồng bộ ngay lần đầu).
+    let storedBest = -1;
     const game = new SuikaGame(
       canvas,
       {
         onScore: setScore,
-        onBest: setBest,
+        onBest: (v) => {
+          if (storedBest < 0) storedBest = v;
+          setBest(v);
+        },
         onNext: setNextTier,
         onDiscover: (tier) =>
           setDiscovered((prev) => (prev.has(tier) ? prev : new Set(prev).add(tier))),
-        onGameOver: (finalScore, biggest) => setOver({ score: finalScore, biggest }),
+        onGameOver: (finalScore, biggest) => {
+          setOver({ score: finalScore, biggest });
+          setRanking(null);
+          submitScore(finalScore).then(setRanking, () => {});
+        },
       },
       // Game chỉ dựng một lần nên đọc thẳng hướng màn hình lúc này, thay vì
       // phụ thuộc `world` (sẽ khiến effect dựng lại game mỗi lần xoay máy).
@@ -115,6 +136,9 @@ export default function SuikaBoard() {
     );
     gameRef.current = game;
     game.start();
+    // Đẩy điểm cao đã có từ trước khi có bảng xếp hạng lên server; server tự bỏ
+    // qua nếu không cao hơn điểm đã lưu.
+    if (storedBest > 0) submitScore(storedBest).catch(() => {});
 
     return () => {
       game.destroy();
@@ -152,12 +176,23 @@ export default function SuikaBoard() {
     gameRef.current?.reset();
   }, []);
 
+  const closeRanking = useCallback(() => setShowRanking(false), []);
+  const openRename = useCallback(() => setNameDialog('edit'), []);
+
+  const submitName = useCallback((name: string) => {
+    setPlayerName(name);
+    setNameDialog(null);
+    savePlayerName(name).then(
+      () => setRankingKey((k) => k + 1),
+      () => {},
+    );
+  }, []);
+
   const next = FRUITS[nextTier];
 
   return (
     <div className={styles.wrap}>
       <header className={styles.head}>
-        <div className={styles.kanji}>スイカゲーム</div>
         <h1 className={styles.title}>
           Suika <em>Yatai</em>
         </h1>
@@ -171,6 +206,15 @@ export default function SuikaBoard() {
             phần tử đó, chạy trước handler của React nên không chặn kịp. */}
         <div className={styles.statsHead}>
           <p className={styles.label}>Điểm</p>
+          <button
+            type="button"
+            className={`${styles.sound} ${styles.rankBtn}`}
+            aria-label="Bảng xếp hạng"
+            title="Bảng xếp hạng"
+            onClick={() => setShowRanking(true)}
+          >
+            <TrophyIcon />
+          </button>
           <button
             type="button"
             className={`${styles.sound} ${muted ? styles.soundOff : ''}`}
@@ -201,14 +245,20 @@ export default function SuikaBoard() {
             <canvas ref={canvasRef} width={world.w} height={world.h} />
             {over && (
               <div className={styles.over}>
-                <div className={styles.jp}>ゲームオーバー</div>
                 <h2>Tràn mất rồi</h2>
                 <div className={styles.final}>{over.score}</div>
-                <p>
-                  Quả lớn nhất: {FRUITS[over.biggest].vi}（{FRUITS[over.biggest].jp}）
-                </p>
+                <p>Quả lớn nhất: {FRUITS[over.biggest].vi}</p>
+                {ranking?.me && (
+                  <p className={styles.rankLine}>
+                    Hạng <strong>#{ranking.me.rank}</strong> / {ranking.total} · kỷ lục{' '}
+                    {ranking.me.score}
+                  </p>
+                )}
                 <button className={styles.play} type="button" onClick={restart}>
                   Chơi ván mới
+                </button>
+                <button className={styles.link} type="button" onClick={() => setShowRanking(true)}>
+                  Xem bảng xếp hạng
                 </button>
               </div>
             )}
@@ -222,16 +272,48 @@ export default function SuikaBoard() {
           <canvas ref={nextCanvasRef} width={128} height={128} />
           <div className={styles.nextText}>
             <div className={styles.nm}>{next.vi}</div>
-            <div className={styles.nextJp}>{next.jp}</div>
           </div>
         </div>
       </div>
+
+      {showRanking && (
+        <LeaderboardPanel
+          key={rankingKey}
+          initial={over ? ranking : null}
+          onClose={closeRanking}
+          onRename={openRename}
+        />
+      )}
+
+      {nameDialog && (
+        <NameDialog
+          initialName={playerName}
+          onSubmit={submitName}
+          onClose={nameDialog === 'edit' ? () => setNameDialog(null) : undefined}
+        />
+      )}
 
       <p className={styles.hint}>
         Rê chuột hoặc kéo tay để ngắm, thả ra là quả rơi. Bàn phím: <kbd>←</kbd> <kbd>→</kbd> để
         chỉnh, <kbd>Space</kbd> để thả.
       </p>
     </div>
+  );
+}
+
+/** Cúp — mở bảng xếp hạng. */
+function TrophyIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+      <path
+        d="M7 4h10v4a5 5 0 0 1-10 0zM7 6H4.5a2.5 2.5 0 0 0 2.8 3.4M17 6h2.5a2.5 2.5 0 0 1-2.8 3.4M12 13v3.5M8.5 20h7l-.8-3.5H9.3z"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinejoin="round"
+        strokeLinecap="round"
+      />
+    </svg>
   );
 }
 
