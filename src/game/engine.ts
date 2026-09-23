@@ -144,6 +144,13 @@ export class SuikaGame {
 
   private score = 0;
   private best = 0;
+  /**
+   * Hàng chờ hai quả. `heldTier` là quả đang cầm ở miệng hũ, thả ra là rơi
+   * xuống; `nextTier` là quả sẽ vào tay ngay sau đó và là thứ ô "Quả kế tiếp"
+   * hiển thị. Trước đây chỉ có một biến cho cả hai việc, nên ô đó chỉ lặp lại
+   * đúng quả đang cầm — người chơi không hề biết trước quả sau.
+   */
+  private heldTier = 0;
   private nextTier = 0;
   private aimX: number;
   private lastDrop = -Infinity;
@@ -193,7 +200,7 @@ export class SuikaGame {
       Engine.clear(this.engine);
     }
     this.buildWorld();
-    this.pickNext();
+    this.fillQueue();
     this.lastDrop = -Infinity;
     this.acc = 0;
     this.running = true;
@@ -432,17 +439,26 @@ export class SuikaGame {
     if (now - this.lastDrop < COOLDOWN) return;
     this.lastDrop = now;
     const b = this.fruitBody(
-      this.nextTier,
-      this.clampAim(this.aimX, this.nextTier),
+      this.heldTier,
+      this.clampAim(this.aimX, this.heldTier),
       this.world.dropY,
     );
     b.dropped = true;
     Composite.add(this.engine.world, b);
     audio.drop();
-    this.pickNext();
+    this.advanceQueue();
   }
 
-  private pickNext() {
+  /** Nạp hàng chờ từ đầu: bốc quả để cầm và quả kế tiếp. */
+  private fillQueue() {
+    this.heldTier = randomSpawnTier();
+    this.nextTier = randomSpawnTier();
+    this.handlers.onNext?.(this.nextTier);
+  }
+
+  /** Thả xong thì quả kế tiếp vào tay, và bốc quả mới cho ô kế tiếp. */
+  private advanceQueue() {
+    this.heldTier = this.nextTier;
     this.nextTier = randomSpawnTier();
     this.handlers.onNext?.(this.nextTier);
   }
@@ -510,19 +526,19 @@ export class SuikaGame {
 
     // đường ngắm + quả đang cầm
     if (this.running && !this.dead) {
-      const x = this.clampAim(this.aimX, this.nextTier);
+      const x = this.clampAim(this.aimX, this.heldTier);
       ctx.save();
       ctx.setLineDash([4, 10]);
       ctx.strokeStyle = 'rgba(255,178,63,0.35)';
       ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.moveTo(x, DROP_Y + FRUITS[this.nextTier].r);
+      ctx.moveTo(x, DROP_Y + FRUITS[this.heldTier].r);
       ctx.lineTo(x, H - WALL);
       ctx.stroke();
       ctx.restore();
       const ready = Math.min(1, (performance.now() - this.lastDrop) / COOLDOWN);
       ctx.globalAlpha = 0.45 + ready * 0.55;
-      drawFruit(ctx, this.nextTier, x, DROP_Y, 0, 1);
+      drawFruit(ctx, this.heldTier, x, DROP_Y, 0, 1);
       ctx.globalAlpha = 1;
     }
 

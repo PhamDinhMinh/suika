@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState, type CSSProperties } from 're
 import { audio } from '../game/audio';
 import { SuikaGame } from '../game/engine';
 import { drawFruit } from '../game/draw';
-import { FRUITS, LANDSCAPE_WORLD, PORTRAIT_WORLD } from '../game/fruits';
+import { FRUITS, LANDSCAPE_WORLD, PORTRAIT_WORLD, type WorldSize } from '../game/fruits';
 import MergeLadder from './MergeLadder';
 import styles from './SuikaBoard.module.css';
 
@@ -15,6 +15,12 @@ const PREVIEW_R = 44;
  */
 const LANDSCAPE_MQ = '(orientation: landscape) and (max-height: 620px)';
 
+/**
+ * Ngưỡng "điện thoại dựng": lộ trình nằm ngang, hũ ăn trọn bề ngang.
+ * PHẢI khớp với @media tương ứng trong SuikaBoard.module.css.
+ */
+const PHONE_MQ = '(max-width: 719.98px) and (orientation: portrait)';
+
 /** Hũ ứng với hướng màn hình ngay tại thời điểm gọi. */
 function currentWorld() {
   return typeof window !== 'undefined' && window.matchMedia(LANDSCAPE_MQ).matches
@@ -22,20 +28,20 @@ function currentWorld() {
     : PORTRAIT_WORLD;
 }
 
-function useLandscape(): boolean {
-  const [landscape, setLandscape] = useState(
-    () => typeof window !== 'undefined' && window.matchMedia(LANDSCAPE_MQ).matches,
+function useMedia(query: string): boolean {
+  const [matches, setMatches] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia(query).matches,
   );
 
   useEffect(() => {
-    const mq = window.matchMedia(LANDSCAPE_MQ);
-    const sync = () => setLandscape(mq.matches);
+    const mq = window.matchMedia(query);
+    const sync = () => setMatches(mq.matches);
     sync();
     mq.addEventListener('change', sync);
     return () => mq.removeEventListener('change', sync);
-  }, []);
+  }, [query]);
 
-  return landscape;
+  return matches;
 }
 
 interface GameOverInfo {
@@ -43,8 +49,37 @@ interface GameOverInfo {
   biggest: number;
 }
 
+/**
+ * Bề ngang lớn nhất của hũ mà vẫn lọt khung `.boardArea`, giữ đúng tỉ lệ.
+ *
+ * Làm bằng JS chứ không phải CSS là có lý do: bản CSS thuần (container query
+ * `min(100cqw, 100cqh * w / h)`) đo sai chiều cao trên máy thấp — hũ phình ra
+ * quá khung 79px rồi bị cắt mất đáy. Khung lấy chiều cao từ hàng grid
+ * `minmax(0, 1fr)` nên không phụ thuộc vào hũ, không có vòng lặp đo đạc.
+ */
+function useFitWidth(ref: React.RefObject<HTMLElement | null>, world: WorldSize, on: boolean) {
+  const [width, setWidth] = useState(0);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || !on) {
+      setWidth(0);
+      return;
+    }
+    const ro = new ResizeObserver(([entry]) => {
+      const { width: w, height: h } = entry.contentRect;
+      setWidth(Math.floor(Math.min(w, (h * world.w) / world.h)));
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [ref, on, world.w, world.h]);
+
+  return width;
+}
+
 export default function SuikaBoard() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const areaRef = useRef<HTMLDivElement>(null);
   const nextCanvasRef = useRef<HTMLCanvasElement>(null);
   const gameRef = useRef<SuikaGame | null>(null);
 
@@ -55,8 +90,10 @@ export default function SuikaBoard() {
   const [over, setOver] = useState<GameOverInfo | null>(null);
   const [muted, setMuted] = useState(() => audio.isMuted());
 
-  const landscape = useLandscape();
+  const landscape = useMedia(LANDSCAPE_MQ);
+  const phone = useMedia(PHONE_MQ);
   const world = landscape ? LANDSCAPE_WORLD : PORTRAIT_WORLD;
+  const fitWidth = useFitWidth(areaRef, world, phone);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -149,25 +186,33 @@ export default function SuikaBoard() {
       </div>
 
       <div className={styles.arena}>
-        <MergeLadder className={styles.ladder} discovered={discovered} />
-        <div
-          className={styles.board}
-          style={{ '--ar': `${world.w} / ${world.h}` } as CSSProperties}
-        >
-          <canvas ref={canvasRef} width={world.w} height={world.h} />
-          {over && (
-            <div className={styles.over}>
-              <div className={styles.jp}>ゲームオーバー</div>
-              <h2>Tràn mất rồi</h2>
-              <div className={styles.final}>{over.score}</div>
-              <p>
-                Quả lớn nhất: {FRUITS[over.biggest].vi}（{FRUITS[over.biggest].jp}）
-              </p>
-              <button className={styles.play} type="button" onClick={restart}>
-                Chơi ván mới
-              </button>
-            </div>
-          )}
+        {/* Điện thoại dựng: bỏ hẳn lộ trình, dồn chỗ cho hũ. */}
+        {!phone && <MergeLadder className={styles.ladder} discovered={discovered} />}
+        <div className={styles.boardArea} ref={areaRef}>
+          <div
+            className={styles.board}
+            style={
+              {
+                '--ar': `${world.w} / ${world.h}`,
+                ...(fitWidth ? { width: `${fitWidth}px` } : null),
+              } as CSSProperties
+            }
+          >
+            <canvas ref={canvasRef} width={world.w} height={world.h} />
+            {over && (
+              <div className={styles.over}>
+                <div className={styles.jp}>ゲームオーバー</div>
+                <h2>Tràn mất rồi</h2>
+                <div className={styles.final}>{over.score}</div>
+                <p>
+                  Quả lớn nhất: {FRUITS[over.biggest].vi}（{FRUITS[over.biggest].jp}）
+                </p>
+                <button className={styles.play} type="button" onClick={restart}>
+                  Chơi ván mới
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

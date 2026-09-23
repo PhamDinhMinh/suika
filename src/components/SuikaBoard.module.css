@@ -67,6 +67,13 @@
   grid-area: ladder;
 }
 
+/* Khung chứa hũ. Mặc định trong suốt để desktop và máy xoay ngang giữ nguyên
+   bố cục cũ; chỉ ở điện thoại dựng nó mới thành một ô thật, làm "thước đo"
+   khoảng trống còn lại cho hũ. */
+.boardArea {
+  display: contents;
+}
+
 /* ---- board ---- */
 .board {
   grid-area: board;
@@ -290,6 +297,184 @@
   border-bottom-width: 2px;
   border-radius: 6px;
   padding: 1px 6px;
+}
+
+/* Điện thoại dựng: lộ trình nằm ngang thành một dải riêng, nhờ vậy hũ ăn trọn
+   bề ngang màn hình (đo trên iPhone 14: 272px -> 358px, rộng thêm 32%).
+   Ngưỡng phải khớp với PHONE_MQ trong SuikaBoard.tsx. */
+@media (max-width: 719.98px) and (orientation: portrait) {
+  .wrap {
+    /* Cả game gọn trong đúng một màn — không bao giờ bắt người chơi cuộn. */
+    position: relative;
+    height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
+    padding-block: max(10px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-bottom));
+    /* Lề hẹp hơn desktop: mỗi px lề là một px bề ngang hũ mất đi. */
+    padding-inline: max(10px, env(safe-area-inset-left)) max(10px, env(safe-area-inset-right));
+    gap: 10px;
+    /* Hũ nhận hết phần cao còn thừa; minmax(0,…) để nó co được, không đẩy tràn. */
+    grid-template-rows: auto auto minmax(0, 1fr);
+    grid-template-areas:
+      'head head'
+      'stats next'
+      'board board';
+  }
+
+  /* Tách lộ trình và hũ thành hai ô grid riêng thay vì nằm chung .arena. */
+  .arena {
+    display: contents;
+  }
+
+  /* Thành ô thật để đo được: nó chiếm đúng khoảng trống còn lại sau tiêu đề,
+     hai thẻ và dải lộ trình.
+     Flex chứ không phải grid: `place-items: center` của grid không căn giữa
+     đúng khi ô có `container-type: size` (đo được lệch 94/31 thay vì 63/63),
+     flex thì chuẩn. */
+  .boardArea {
+    display: flex;
+    grid-area: board;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    min-height: 0;
+  }
+
+  /* Bề ngang do useFitWidth đo và gán thẳng vào style; 100% chỉ là mức nền
+     cho khung hình đầu tiên trước khi ResizeObserver kịp chạy.
+     `flex: none` là bắt buộc: .board mang sẵn `flex: 1 1 auto` của bố cục
+     desktop, vào khung flex này nó sẽ giãn ra đè mất bề ngang đã đo. */
+  .board {
+    flex: none;
+    max-width: none;
+    width: 100%;
+  }
+
+  /* Dòng kanji trang trí và câu mô tả luật chơi nhường chỗ cho hũ. Bản desktop
+     vẫn giữ nguyên cả hai. */
+  .kanji,
+  .tagline {
+    display: none;
+  }
+
+  .title {
+    font-size: 20px;
+    margin: 0;
+  }
+
+  /* ---- thanh HUD ----
+     Hai thẻ dính liền thành một thanh duy nhất, ngăn nhau bằng một vạch mảnh.
+     Trên màn hẹp, hai hộp rời trôi nổi trông rời rạc; một thanh liền đọc ra
+     là bảng điều khiển của game. */
+  .wrap {
+    column-gap: 0;
+  }
+
+  .card {
+    padding: 9px 13px;
+    background: linear-gradient(180deg, #1b1f4a 0%, #15183a 100%);
+  }
+
+  .stats {
+    border-radius: 16px 0 0 16px;
+    border-right: 0;
+  }
+
+  .nextCard {
+    border-radius: 0 16px 16px 0;
+  }
+
+  /* HUD gọn hết mức: bỏ hai dòng nhãn ("ĐIỂM", "QUẢ KẾ TIẾP") và tên tiếng
+     Nhật. Con số to đứng cạnh "Cao nhất" thì tự nó đã rõ là điểm, còn quả nằm
+     ngay trên hũ thì rõ là quả kế tiếp — hai dòng nhãn đó chỉ tốn chiều cao.
+     Đo được 105px -> 62px, 43px dôi ra trả hết cho hũ. */
+  .label,
+  .nextJp {
+    display: none;
+  }
+
+  /* Vẫn phải giữ statsHead hiển thị: nút loa là con của nó. */
+  .statsHead {
+    margin-bottom: 0;
+  }
+
+  .score {
+    font-size: 30px;
+  }
+
+  .best {
+    font-size: 11px;
+    margin-top: 3px;
+  }
+
+  /* Quả kế tiếp căn giữa theo chiều dọc so với hai dòng điểm bên trái. */
+  .nextCard {
+    display: flex;
+    align-items: center;
+  }
+
+  .next {
+    gap: 9px;
+  }
+
+  /* Quả kế tiếp nằm trong một "hốc" tròn chìm, đọc ra là ô chứa chứ không
+     phải cái ảnh thả lơ lửng. Chỉ tối hơn nền thẻ một chút — tối quá thì
+     thành cái lỗ đen, át mất quả. */
+  .next canvas {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 50% 42%, #191d44 0%, #121531 100%);
+    box-shadow:
+      inset 0 0 0 1px #ffffff12,
+      inset 0 2px 6px #00000047;
+  }
+
+  .nm {
+    font-size: 14px;
+  }
+
+  /* Máy rất hẹp (iPhone SE đời đầu, 320px): nửa thẻ chỉ còn 122px, đủ cho
+     quả + tên nếu thu nhỏ lại. Không thu thì "Dưa lưới" xuống dòng, thanh HUD
+     cao vọt lên và lệch hẳn. */
+  @media (max-width: 359.98px) {
+    .score {
+      font-size: 26px;
+    }
+
+    .next {
+      gap: 7px;
+    }
+
+    .next canvas {
+      width: 38px;
+      height: 38px;
+    }
+
+    .nm {
+      font-size: 13px;
+    }
+  }
+
+  /* Nút loa rời khỏi thẻ điểm, lên hẳn góc phải trên cùng — thẻ điểm sạch
+     hẳn, mà nút vẫn luôn ở chỗ dễ đoán. */
+  .sound {
+    position: absolute;
+    top: max(9px, env(safe-area-inset-top));
+    right: max(9px, env(safe-area-inset-right));
+    width: 32px;
+    height: 32px;
+    margin: 0;
+    border-color: transparent;
+    background: transparent;
+    color: var(--muted);
+  }
+
+  /* Trên điện thoại thì kéo tay là hiểu ngay, mà dòng phím tắt chiếm tới 60px
+     chiều cao — bỏ đi để dành chỗ cho hũ. */
+  .hint {
+    display: none;
+  }
 }
 
 /* Rộng (desktop): lộ trình + hũ bên trái, hai thẻ xếp chồng bên phải. */

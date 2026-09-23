@@ -17,19 +17,24 @@ const ladderRadius = (tier: number) => R_MIN + (R_MAX - R_MIN) * (tier / (FRUITS
 
 const sway = (tier: number) => Math.sin(tier * 1.05) * SWAY;
 
-/** Toạ độ y của từng bậc, xếp từ dưới lên, kèm tổng chiều cao cần có. */
+/**
+ * Vị trí từng bậc dọc theo *trục chính* của lộ trình, đo từ đầu quả to nhất.
+ * Trục chính là chiều dọc khi lộ trình dựng đứng, chiều ngang khi nằm ngang —
+ * `pos()` bên dưới lo việc quy đổi.
+ */
 function layout() {
-  const ys: number[] = [];
-  let y = PAD + ladderRadius(FRUITS.length - 1);
+  const at: number[] = [];
+  let d = PAD + ladderRadius(FRUITS.length - 1);
   for (let t = FRUITS.length - 1; t >= 0; t--) {
-    ys[t] = y;
-    if (t > 0) y += (ladderRadius(t) + ladderRadius(t - 1)) * 0.95 + GAP;
+    at[t] = d;
+    if (t > 0) d += (ladderRadius(t) + ladderRadius(t - 1)) * 0.95 + GAP;
   }
-  return { ys, height: Math.ceil(y + ladderRadius(0) + PAD) };
+  return { at, length: Math.ceil(d + ladderRadius(0) + PAD) };
 }
 
-const { ys: STEP_Y, height: LADDER_H } = layout();
-const LADDER_W = Math.ceil((R_MAX + SWAY + PAD) * 2);
+const { at: STEP_AT, length: LADDER_LEN } = layout();
+/** Bề dày của dải — chiều còn lại, đủ chỗ cho quả to nhất và biên độ lượn. */
+const LADDER_THICK = Math.ceil((R_MAX + SWAY + PAD) * 2);
 
 interface Props {
   discovered: Set<number>;
@@ -46,24 +51,32 @@ export default function MergeLadder({ discovered, className }: Props) {
       const ctx = canvas?.getContext('2d');
       if (!canvas || !ctx) return;
 
+      const w = LADDER_THICK;
+      const h = LADDER_LEN;
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      if (canvas.width !== LADDER_W * dpr) {
-        canvas.width = LADDER_W * dpr;
-        canvas.height = LADDER_H * dpr;
+      if (canvas.width !== w * dpr || canvas.height !== h * dpr) {
+        canvas.width = w * dpr;
+        canvas.height = h * dpr;
       }
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      ctx.clearRect(0, 0, LADDER_W, LADDER_H);
+      ctx.clearRect(0, 0, w, h);
 
-      const cx = LADDER_W / 2;
+      /** Tâm của bậc `t` — quả to nhất ở trên cùng. */
+      const pos = (t: number) => ({ x: LADDER_THICK / 2 + sway(t), y: STEP_AT[t] });
+
       const top = Math.max(...[...discovered], -1);
 
       // Mũi tên nối giữa các bậc, sáng dần theo tiến độ đã mở.
       for (let t = 0; t < FRUITS.length - 1; t++) {
         const reached = discovered.has(t);
-        const x0 = cx + sway(t);
-        const x1 = cx + sway(t + 1);
-        const y0 = STEP_Y[t] - ladderRadius(t) - 2;
-        const y1 = STEP_Y[t + 1] + ladderRadius(t + 1) + 2;
+        // Cắt hai đầu đoạn nối đúng mép hai quả, theo hướng thật của đoạn.
+        const from = pos(t);
+        const to = pos(t + 1);
+        const a = Math.atan2(to.y - from.y, to.x - from.x);
+        const x0 = from.x + Math.cos(a) * (ladderRadius(t) + 2);
+        const y0 = from.y + Math.sin(a) * (ladderRadius(t) + 2);
+        const x1 = to.x - Math.cos(a) * (ladderRadius(t + 1) + 2);
+        const y1 = to.y - Math.sin(a) * (ladderRadius(t + 1) + 2);
         ctx.strokeStyle = reached ? 'rgba(255,178,63,0.55)' : 'rgba(142,144,192,0.22)';
         ctx.lineWidth = 1.6;
         ctx.lineCap = 'round';
@@ -74,7 +87,6 @@ export default function MergeLadder({ discovered, className }: Props) {
 
         // Bậc kế tiếp chưa mở: chỉ mũi tên để thấy đang tiến tới đâu.
         if (t === top) {
-          const a = Math.atan2(y1 - y0, x1 - x0);
           ctx.fillStyle = 'rgba(255,178,63,0.9)';
           ctx.save();
           ctx.translate(x1, y1);
@@ -91,8 +103,7 @@ export default function MergeLadder({ discovered, className }: Props) {
 
       for (let t = 0; t < FRUITS.length; t++) {
         const r = ladderRadius(t);
-        const x = cx + sway(t);
-        const y = STEP_Y[t];
+        const { x, y } = pos(t);
         const seen = discovered.has(t);
 
         if (t === top) {
@@ -120,9 +131,9 @@ export default function MergeLadder({ discovered, className }: Props) {
         className={styles.canvas}
         style={
           {
-            '--lw': `${LADDER_W}px`,
-            '--lh': `${LADDER_H}px`,
-            '--lar': `${LADDER_W} / ${LADDER_H}`,
+            '--lw': `${LADDER_THICK}px`,
+            '--lh': `${LADDER_LEN}px`,
+            '--lar': `${LADDER_THICK} / ${LADDER_LEN}`,
           } as CSSProperties
         }
         role="img"
