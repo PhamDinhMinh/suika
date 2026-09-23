@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react';
+import { audio } from '../game/audio';
 import { SuikaGame } from '../game/engine';
 import { drawFruit } from '../game/draw';
 import { FRUITS, LANDSCAPE_WORLD, PORTRAIT_WORLD } from '../game/fruits';
@@ -43,7 +44,6 @@ interface GameOverInfo {
 }
 
 export default function SuikaBoard() {
-  const boardRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const nextCanvasRef = useRef<HTMLCanvasElement>(null);
   const gameRef = useRef<SuikaGame | null>(null);
@@ -53,18 +53,17 @@ export default function SuikaBoard() {
   const [nextTier, setNextTier] = useState(0);
   const [discovered, setDiscovered] = useState<Set<number>>(() => new Set());
   const [over, setOver] = useState<GameOverInfo | null>(null);
+  const [muted, setMuted] = useState(() => audio.isMuted());
 
   const landscape = useLandscape();
   const world = landscape ? LANDSCAPE_WORLD : PORTRAIT_WORLD;
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    const board = boardRef.current;
-    if (!canvas || !board) return;
+    if (!canvas) return;
 
     const game = new SuikaGame(
       canvas,
-      board,
       {
         onScore: setScore,
         onBest: setBest,
@@ -104,6 +103,13 @@ export default function SuikaBoard() {
     ctx.restore();
   }, [nextTier]);
 
+  const toggleSound = useCallback(() => {
+    const next = !audio.isMuted();
+    audio.setMuted(next);
+    if (!next) audio.unlock(); // lần chạm này chính là cử chỉ mở khoá tiếng
+    setMuted(next);
+  }, []);
+
   const restart = useCallback(() => {
     setOver(null);
     gameRef.current?.reset();
@@ -124,7 +130,20 @@ export default function SuikaBoard() {
       </header>
 
       <div className={`${styles.card} ${styles.stats}`}>
-        <p className={styles.label}>Điểm</p>
+        {/* Nút phải nằm ngoài .board: engine gắn listener pointer thẳng lên
+            phần tử đó, chạy trước handler của React nên không chặn kịp. */}
+        <div className={styles.statsHead}>
+          <p className={styles.label}>Điểm</p>
+          <button
+            type="button"
+            className={`${styles.sound} ${muted ? styles.soundOff : ''}`}
+            aria-label={muted ? 'Bật tiếng' : 'Tắt tiếng'}
+            title={muted ? 'Bật tiếng' : 'Tắt tiếng'}
+            onClick={toggleSound}
+          >
+            <SoundIcon muted={muted} />
+          </button>
+        </div>
         <div className={styles.score}>{score}</div>
         <div className={styles.best}>Cao nhất {best}</div>
       </div>
@@ -133,7 +152,6 @@ export default function SuikaBoard() {
         <MergeLadder className={styles.ladder} discovered={discovered} />
         <div
           className={styles.board}
-          ref={boardRef}
           style={{ '--ar': `${world.w} / ${world.h}` } as CSSProperties}
         >
           <canvas ref={canvasRef} width={world.w} height={world.h} />
@@ -169,5 +187,37 @@ export default function SuikaBoard() {
         chỉnh, <kbd>Space</kbd> để thả.
       </p>
     </div>
+  );
+}
+
+/** Loa bật / tắt — vẽ tay cho khỏi kéo thêm bộ icon vào bundle. */
+function SoundIcon({ muted }: { muted: boolean }) {
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+      <path
+        d="M4 9.5h3.2L12 5.5v13l-4.8-4H4z"
+        fill="currentColor"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinejoin="round"
+      />
+      {muted ? (
+        <path
+          d="M16 9.5l5 5m0-5l-5 5"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          fill="none"
+        />
+      ) : (
+        <path
+          d="M15.6 9a4.2 4.2 0 0 1 0 6M18.4 6.6a8 8 0 0 1 0 10.8"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          fill="none"
+        />
+      )}
+    </svg>
   );
 }

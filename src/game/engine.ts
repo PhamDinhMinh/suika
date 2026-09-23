@@ -7,6 +7,7 @@ import {
   type IEventCollision,
   type Engine as MatterEngine,
 } from 'matter-js';
+import { audio } from './audio';
 import { drawFruit } from './draw';
 import {
   COOLDOWN,
@@ -25,6 +26,15 @@ type FruitBody = Body & {
   popAt: number;
   merged: boolean;
   dropped?: boolean;
+  /** Cao độ ở bước trước — dùng để đo quả có thật sự đang đi xuống không. */
+  restY: number;
+  /**
+   * Vị trí ở bước trước. Matter suy ra vận tốc từ `position - positionPrev`,
+   * nên ghi vào đây là cách duy nhất sửa vận tốc **một trục** — `setVelocity`
+   * ghi cả hai, mà trục dọc thì không được đụng vào (xem settle()).
+   * `@types/matter-js` thiếu khai báo này dù Matter có thật.
+   */
+  positionPrev: { x: number; y: number };
 };
 
 interface Particle {
@@ -45,6 +55,42 @@ export interface SuikaHandlers {
 }
 
 const BEST_KEY = 'suika-best';
+
+/* --- nhịp game -------------------------------------------------------------
+ * Mỗi bước vật lý luôn là 1/60 giây mô phỏng, bất kể màn hình quét bao nhiêu Hz
+ * (chạy thẳng theo nhịp vẽ thì máy 120Hz sẽ chơi nhanh gấp đôi máy 60Hz).
+ * Muốn game nhanh/chậm thì vặn GAME_SPEED chứ đừng đụng vào STEP_MS: tăng tốc
+ * bằng cách chạy nhiều bước hơn trong một giây thật, nên quãng đường mỗi bước
+ * không đổi — va chạm vẫn chính xác y hệt, không lo quả xuyên qua nhau.
+ * -------------------------------------------------------------------------- */
+const STEP_MS = 1000 / 60;
+/** 1 giây thật = bao nhiêu giây mô phỏng. 1 = chậm rãi, 2 = rất gấp. */
+const GAME_SPEED = 2;
+/** Số ms thật mà một bước vật lý tiêu thụ. */
+const STEP_REAL_MS = STEP_MS / GAME_SPEED;
+/** Trần số bước dồn lại sau một lần khựng, để không "tua nhanh" cả đống. */
+const MAX_STEPS = 6;
+
+/* --- quả tự trôi sang bên --------------------------------------------------
+ * Hai nguyên nhân tách biệt, cần hai liều thuốc khác nhau (xem settle()):
+ *
+ * 1. Rơi quá nhanh thì cú chạm đáy lọt sâu vào trong nền (đo được 4.4px với
+ *    quả nho). Bộ giải mất cả trăm bước mới đẩy ra hết, và ma sát chống lại
+ *    lực đẩy khổng lồ đó làm quả quay tít rồi trượt ngang — quả nho trôi 168px
+ *    chỉ vì vậy. Cắt trần tốc độ rơi là hết: 168px -> 3.8px, lún 4.4px -> 0.5px.
+ *
+ * 2. Matter.js không mô phỏng ma sát lăn: hình tròn chạm đáy là giữ nguyên
+ *    vận tốc góc rồi lăn ngang mãi (~22px). Cần tự hãm lấy.
+ * -------------------------------------------------------------------------- */
+/** Trần tốc độ rơi, px mỗi bước. Cao hơn là bắt đầu lún sâu vào mặt đỡ. */
+const MAX_FALL = 10;
+/** Đi xuống nhanh hơn ngần này là đang rơi hoặc đang lăn khỏi đống — kệ nó. */
+const REST_DY = 0.4;
+/** Hệ số ma sát lăn mỗi bước, chỉ áp cho quả đã nằm trên mặt đỡ. */
+const ROLL_DAMP = 0.88;
+/** Dưới ngưỡng trôi ngang + vòng quay này thì ghim hẳn quả lại. */
+const REST_VX = 0.06;
+const REST_SPIN = 0.02;
 
 function loadBest(): number {
   try {
@@ -69,7 +115,6 @@ function saveBest(v: number) {
 export class SuikaGame {
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
-  private board: HTMLElement;
   private handlers: SuikaHandlers;
   private reduceMotion: boolean;
   /** Kích thước hũ hiện tại — đổi được lúc đang chơi khi máy xoay màn hình. */
@@ -79,6 +124,7 @@ export class SuikaGame {
   private engine!: MatterEngine;
   private raf = 0;
   private prev = 0;
+  private acc = 0;
   private destroyed = false;
 
   private score = 0;
@@ -96,12 +142,10 @@ export class SuikaGame {
 
   constructor(
     canvas: HTMLCanvasElement,
-    board: HTMLElement,
     handlers: SuikaHandlers = {},
     world: WorldSize = PORTRAIT_WORLD,
   ) {
     this.canvas = canvas;
-    this.board = board;
     this.handlers = handlers;
     this.world = world;
     this.aimX = world.w / 2;
@@ -136,12 +180,15 @@ export class SuikaGame {
     this.buildWorld();
     this.pickNext();
     this.lastDrop = -Infinity;
+    this.acc = 0;
     this.running = true;
+    audio.startMusic();
   }
 
   destroy() {
     this.destroyed = true;
     cancelAnimationFrame(this.raf);
+    audio.stopMusic();
     this.unbindInput();
     if (this.engine) {
       Events.off(this.engine, 'collisionStart', this.onCollide);
@@ -190,6 +237,7 @@ export class SuikaGame {
         x: Math.min(next.w - WALL - r, Math.max(WALL + r, b.position.x)),
         y: b.position.y + dy,
       });
+      b.restY = b.position.y;
       b.bornAt = now;
     }
 
@@ -203,9 +251,11 @@ export class SuikaGame {
   private fruitBody(tier: number, x: number, y: number): FruitBody {
     const f = FRUITS[tier];
     const b = Bodies.circle(x, y, f.r, {
-      restitution: 0.12,
-      friction: 0.32,
-      frictionStatic: 0.6,
+      // Nảy ít hơn bản đầu (0.12) cho đống quả mau ổn định. Giữ nguyên
+      // frictionAir mặc định — tăng lên là quả rơi ì ra ngay.
+      restitution: 0.1,
+      friction: 0.35,
+      frictionStatic: 0.7,
       density: 0.0012,
       slop: 0.02,
     }) as FruitBody;
@@ -213,6 +263,7 @@ export class SuikaGame {
     b.bornAt = performance.now();
     b.popAt = performance.now();
     b.merged = false;
+    b.restY = y;
     this.markDiscovered(tier);
     return b;
   }
@@ -249,6 +300,7 @@ export class SuikaGame {
       Composite.remove(this.engine.world, a);
       Composite.remove(this.engine.world, b);
       this.addScore(POINTS[tier]);
+      audio.merge(tier);
       this.burst(x, y, FRUITS[tier].light);
       if (tier >= FRUITS.length - 1) continue;
       const grown = this.fruitBody(tier + 1, x, y);
@@ -276,6 +328,31 @@ export class SuikaGame {
     }
   }
 
+  /** Chống quả tự trôi. Chạy sau mỗi bước vật lý; xem khối chú thích đầu file. */
+  private settle() {
+    for (const b of this.fruits()) {
+      // (1) Trần tốc độ rơi, để cú chạm không lọt sâu vào mặt đỡ.
+      if (b.velocity.y > MAX_FALL) b.positionPrev.y = b.position.y - MAX_FALL;
+
+      // (2) Ma sát lăn. Phải đo "đang đi xuống" bằng vị trí thật chứ không đọc
+      // velocity.y: quả nằm yên trên đáy vẫn bị Matter cộng dồn velocity.y
+      // (nó đỡ quả bằng position solver chứ không xoá vận tốc), có lúc lên tới
+      // 17px/bước trong khi quả không hề nhúc nhích.
+      const dy = b.position.y - b.restY;
+      b.restY = b.position.y;
+      if (dy > REST_DY) continue;
+
+      Body.setAngularVelocity(b, b.angularVelocity * ROLL_DAMP);
+      // Chỉ đụng vào trục ngang. Ghi đè cả velocity.y là tự bơm ngược cái vận
+      // tốc rơi giả nói trên vào quả, và đó đúng là thứ sinh ra bug trôi ngang.
+      b.positionPrev.x = b.position.x - b.velocity.x * ROLL_DAMP;
+      if (Math.abs(b.velocity.x) < REST_VX && Math.abs(b.angularVelocity) < REST_SPIN) {
+        b.positionPrev.x = b.position.x;
+        Body.setAngularVelocity(b, 0);
+      }
+    }
+  }
+
   /* ---------- input ---------- */
 
   private clampAim(x: number, tier: number) {
@@ -289,7 +366,8 @@ export class SuikaGame {
   }
 
   private onPointerDown = (e: PointerEvent) => {
-    this.board.setPointerCapture(e.pointerId);
+    audio.unlock(); // webview chỉ cho phát tiếng từ trong một cử chỉ thật
+    this.canvas.setPointerCapture(e.pointerId);
     this.aimX = this.toLocalX(e.clientX);
   };
   private onPointerMove = (e: PointerEvent) => {
@@ -300,6 +378,7 @@ export class SuikaGame {
     this.drop();
   };
   private onKeyDown = (e: KeyboardEvent) => {
+    audio.unlock();
     if (e.key === 'ArrowLeft') {
       this.aimX -= 16;
       e.preventDefault();
@@ -312,17 +391,23 @@ export class SuikaGame {
     }
   };
 
+  /**
+   * Gắn thẳng lên canvas chứ không lên khung hũ. Khung hũ còn chứa lớp phủ
+   * "thua" với nút chơi lại; bắt pointer ở cấp khung thì `setPointerCapture`
+   * kéo luôn cả pointerup về khung, khiến `click` bắn vào khung thay vì vào
+   * nút — bấm chơi lại không ăn. Canvas là anh em của lớp phủ nên không dính.
+   */
   private bindInput() {
-    this.board.addEventListener('pointerdown', this.onPointerDown);
-    this.board.addEventListener('pointermove', this.onPointerMove);
-    this.board.addEventListener('pointerup', this.onPointerUp);
+    this.canvas.addEventListener('pointerdown', this.onPointerDown);
+    this.canvas.addEventListener('pointermove', this.onPointerMove);
+    this.canvas.addEventListener('pointerup', this.onPointerUp);
     window.addEventListener('keydown', this.onKeyDown);
   }
 
   private unbindInput() {
-    this.board.removeEventListener('pointerdown', this.onPointerDown);
-    this.board.removeEventListener('pointermove', this.onPointerMove);
-    this.board.removeEventListener('pointerup', this.onPointerUp);
+    this.canvas.removeEventListener('pointerdown', this.onPointerDown);
+    this.canvas.removeEventListener('pointermove', this.onPointerMove);
+    this.canvas.removeEventListener('pointerup', this.onPointerUp);
     window.removeEventListener('keydown', this.onKeyDown);
   }
 
@@ -338,6 +423,7 @@ export class SuikaGame {
     );
     b.dropped = true;
     Composite.add(this.engine.world, b);
+    audio.drop();
     this.pickNext();
   }
 
@@ -366,6 +452,7 @@ export class SuikaGame {
   private gameOver() {
     this.dead = true;
     this.running = false;
+    audio.gameOver();
     const biggest = this.fruits().reduce((m, b) => Math.max(m, b.tier), 0);
     this.handlers.onGameOver?.(this.score, biggest);
   }
@@ -452,8 +539,16 @@ export class SuikaGame {
     const dt = Math.min(40, t - this.prev);
     this.prev = t;
     if (this.running) {
-      Engine.update(this.engine, 1000 / 60);
-      this.resolveMerges();
+      // Bước cố định: nhịp vật lý không đổi theo tần số quét màn hình. Một
+      // bước "ăn" STEP_REAL_MS thời gian thật nhưng đẩy mô phỏng đi STEP_MS,
+      // nên game chạy nhanh gấp GAME_SPEED lần.
+      this.acc = Math.min(this.acc + dt, STEP_REAL_MS * MAX_STEPS);
+      while (this.acc >= STEP_REAL_MS) {
+        Engine.update(this.engine, STEP_MS);
+        this.acc -= STEP_REAL_MS;
+        this.resolveMerges();
+        this.settle();
+      }
       this.checkOverflow(dt);
     }
     this.particles = this.particles.filter((p) => p.life > 0);
